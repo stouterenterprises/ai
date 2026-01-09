@@ -3,7 +3,7 @@ import "./styles.css";
 
 export const metadata = {
   title: "Nimbus Support Portal",
-  description: "Intercom-style support portal powered by Supabase"
+  description: "Intercom-style support portal powered by MySQL"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

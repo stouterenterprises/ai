@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { query } from "@/lib/db";
 
 export type RagSource = {
   id: string;
@@ -23,7 +23,6 @@ const getOpenAIClient = () => {
 };
 
 export const runRag = async (question: string, businessId?: string): Promise<RagResult> => {
-  const supabase = createServerSupabaseClient();
   const openai = getOpenAIClient();
 
   const embedding = await openai.embeddings.create({
@@ -32,23 +31,38 @@ export const runRag = async (question: string, businessId?: string): Promise<Rag
   });
 
   const query = embedding.data[0]?.embedding ?? [];
-  const { data, error } = await supabase.rpc("match_kb_chunks", {
-    query_embedding: query,
-    match_count: 6,
-    filter_business_id: businessId ?? null
-  });
+  const chunks = await query<{
+    id: string;
+    title: string;
+    url: string | null;
+    content: string;
+    embedding: string | null;
+  }>(
+    `select id, title, url, content, embedding
+     from kb_chunks
+     ${businessId ? "where business_id = ?" : ""}
+     limit 200`,
+    businessId ? [businessId] : []
+  );
 
-  if (error || !data) {
+  const scored = chunks
+    .map((chunk) => {
+      const embedding = chunk.embedding ? (JSON.parse(chunk.embedding) as number[]) : [];
+      const similarity = cosineSimilarity(query, embedding);
+      return { ...chunk, similarity };
+    })
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, 6);
+
+  if (!scored.length) {
     return {
       answer: "I couldn't find relevant sources. Please rephrase your question or contact an agent.",
       sources: []
     };
   }
 
-  const context = data
-    .map((chunk: any, index: number) =>
-      `Source ${index + 1}: ${chunk.title}\n${chunk.content}\nURL: ${chunk.url ?? ""}`
-    )
+  const context = scored
+    .map((chunk, index) => `Source ${index + 1}: ${chunk.title}\n${chunk.content}\nURL: ${chunk.url ?? ""}`)
     .join("\n\n");
 
   const completion = await openai.chat.completions.create({
@@ -68,7 +82,7 @@ export const runRag = async (question: string, businessId?: string): Promise<Rag
 
   return {
     answer: completion.choices[0]?.message?.content ?? "No answer generated.",
-    sources: data.map((chunk: any) => ({
+    sources: scored.map((chunk) => ({
       id: chunk.id,
       title: chunk.title,
       url: chunk.url,
@@ -76,4 +90,18 @@ export const runRag = async (question: string, businessId?: string): Promise<Rag
       similarity: chunk.similarity
     }))
   };
+};
+
+const cosineSimilarity = (a: number[], b: number[]) => {
+  if (!a.length || !b.length || a.length !== b.length) return 0;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  if (!normA || !normB) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 };

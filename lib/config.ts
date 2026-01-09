@@ -1,6 +1,6 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { query } from "@/lib/db";
 
-export type ConfigSource = "supabase";
+export type ConfigSource = "mysql";
 
 export type FeatureFlag = {
   key: string;
@@ -18,26 +18,32 @@ export interface ConfigService {
   getBusinessConfig(businessId: string): Promise<BusinessConfig>;
 }
 
-export class SupabaseConfigService implements ConfigService {
+export class DatabaseConfigService implements ConfigService {
   async getBusinessConfig(businessId: string): Promise<BusinessConfig> {
-    const supabase = createServerSupabaseClient();
-    const { data: business } = await supabase
-      .from("businesses")
-      .select("id, default_department_id, allow_department_picker")
-      .eq("id", businessId)
-      .single();
-    const { data: flags } = await supabase
-      .from("feature_flags")
-      .select("key, enabled")
-      .eq("business_id", businessId);
+    const [business] = await query<{
+      id: string;
+      default_department_id: string | null;
+      allow_department_picker: number;
+    }>(
+      `select id, default_department_id, allow_department_picker
+       from businesses
+       where id = ?
+       limit 1`,
+      [businessId]
+    );
+
+    const flags = await query<{ key: string; enabled: number }>(
+      `select \`key\`, enabled from feature_flags where business_id = ?`,
+      [businessId]
+    );
 
     return {
       businessId,
-      allowDepartmentPicker: business?.allow_department_picker ?? true,
+      allowDepartmentPicker: business ? Boolean(business.allow_department_picker) : true,
       defaultDepartmentId: business?.default_department_id ?? null,
-      featureFlags: flags ?? []
+      featureFlags: flags.map((flag) => ({ key: flag.key, enabled: Boolean(flag.enabled) }))
     };
   }
 }
 
-export const getConfigService = (): ConfigService => new SupabaseConfigService();
+export const getConfigService = (): ConfigService => new DatabaseConfigService();

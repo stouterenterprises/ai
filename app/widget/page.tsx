@@ -8,7 +8,7 @@ export default function WidgetPage() {
         <h2>Embeddable messenger</h2>
         <p>
           Add this snippet to any site to load the Nimbus messenger widget. The widget
-          connects to Supabase Realtime for chat and uses department routing rules.
+          connects to the real-time messaging service for chat and uses department routing rules.
         </p>
         <pre>
           {`<script src="https://YOUR_DOMAIN/widget.js" data-business="YOUR_BUSINESS_ID"></script>`}

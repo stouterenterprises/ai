@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { execute } from "@/lib/db";
 import crypto from "crypto";
 
 const verifySignature = (payload: string, signature: string | null) => {
@@ -18,14 +18,11 @@ export async function POST(request: Request) {
   }
 
   const event = JSON.parse(rawBody);
-  const supabase = createServerSupabaseClient();
-
-  await supabase.from("event_log").insert({
-    business_id: event.businessId,
-    department_id: event.departmentId ?? null,
-    event_type: event.type,
-    payload: event
-  });
+  await execute(
+    `insert into event_log (business_id, department_id, event_type, payload)
+     values (?, ?, ?, ?)`,
+    [event.businessId, event.departmentId ?? null, event.type, JSON.stringify(event)]
+  );
 
   return NextResponse.json({ received: true });
 }

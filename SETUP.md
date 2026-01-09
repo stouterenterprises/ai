@@ -1,20 +1,11 @@
-# Nimbus Support Portal Setup
+# Nimbus Support Portal Setup (AccuWeb + MySQL)
 
-## Supabase
-1. Create a new Supabase project.
-2. In **SQL Editor**, run the migration SQL from `supabase/migrations/0001_init.sql`.
-3. Enable pgvector (already in the migration). Verify under **Database → Extensions**.
-4. Create storage buckets:
-   - `attachments` (private)
-   - `kb-assets` (public)
-5. Configure Auth:
-   - Enable email/password.
-   - (Optional) Enable OAuth providers.
-6. Set **Site URL** and **Redirect URLs**:
-   - Local: `http://localhost:3000`
-   - Vercel: `https://YOUR_APP.vercel.app`
-7. Enable Realtime for tables:
-   - `conversations`, `messages`, `tickets`, `ticket_comments`
+## Database (phpMyAdmin / MySQL)
+1. Log into your AccuWeb hosting control panel.
+2. Create a MySQL database and user (note host, username, and password).
+3. Open phpMyAdmin and import the schema from `db/schema.sql`.
+4. (Optional) Create a database user with minimum privileges:
+   - `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, `INDEX` on the Nimbus database.
 
 ## Local Development
 1. Clone the repo and install dependencies:
@@ -26,9 +17,11 @@
    cp .env.example .env.local
    ```
 3. Populate `.env.local`:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `MYSQL_HOST`
+   - `MYSQL_PORT`
+   - `MYSQL_USER`
+   - `MYSQL_PASSWORD`
+   - `MYSQL_DATABASE`
    - `AI_PROVIDER_KEY`
    - `WEBHOOK_SIGNING_SECRET`
    - `TWILIO_ACCOUNT_SID`
@@ -45,18 +38,28 @@
    npm run db:seed
    ```
 
-## GitHub + Vercel
-1. Push the repo to GitHub.
-2. Import the repository into Vercel.
-3. Set the environment variables in Vercel (same as `.env.local`).
-4. Deploy.
-5. Update Supabase **Site URL** and **Redirect URLs** with your Vercel domain.
-6. Verify login and data access in production.
+## AccuWeb Deployment (Node.js App)
+1. Create a Node.js application in AccuWeb (select the latest LTS Node version).
+2. Point the app root to your deployed repository (or upload the build files).
+3. Set the environment variables from `.env.local` in the AccuWeb Node.js app settings.
+4. Install dependencies:
+   ```bash
+   npm install
+   ```
+5. Build the app:
+   ```bash
+   npm run build
+   ```
+6. Start the app:
+   ```bash
+   npm run start
+   ```
+7. Ensure the hosting firewall allows outbound HTTPS for OpenAI, Twilio, Zapier, etc.
 
 ## Webhooks
 ### Zapier (Webhooks by Zapier)
 1. Create a new Zap with **Catch Hook**.
-2. Copy the hook URL into the `integrations` table.
+2. Copy the hook URL into the `integrations` table (provider `zapier`).
 3. Configure event types:
    - `conversation.started`, `message.sent`, `ticket.created`, `ticket.status_changed`, `conversation.escalated_to_human`, `kb.article.published`.
 

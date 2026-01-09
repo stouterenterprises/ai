@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { query } from "@/lib/db";
 
 const fallback = {
   departments: [
@@ -50,84 +50,119 @@ const fallback = {
   ]
 };
 
-const canUseSupabase = () =>
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-
 export const getPublicArticles = async () => {
-  if (!canUseSupabase()) return fallback.articles;
-  const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("kb_articles")
-    .select("id, title, summary, department:departments(name)")
-    .eq("status", "published")
-    .limit(6);
-  if (error || !data) return fallback.articles;
-  return data.map((article) => ({
-    id: article.id,
-    title: article.title,
-    summary: article.summary ?? "",
-    departmentName: article.department?.name ?? "Global"
-  }));
+  try {
+    const articles = await query<{
+      id: string;
+      title: string;
+      summary: string | null;
+      departmentName: string | null;
+    }>(
+      `select kb_articles.id, kb_articles.title, kb_articles.summary, departments.name as departmentName
+       from kb_articles
+       left join departments on kb_articles.department_id = departments.id
+       where kb_articles.status = 'published'
+       order by kb_articles.created_at desc
+       limit 6`
+    );
+    if (!articles.length) return fallback.articles;
+    return articles.map((article) => ({
+      id: article.id,
+      title: article.title,
+      summary: article.summary ?? "",
+      departmentName: article.departmentName ?? "Global"
+    }));
+  } catch {
+    return fallback.articles;
+  }
 };
 
 export const getCustomerTickets = async () => {
-  if (!canUseSupabase()) return fallback.tickets;
-  const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("tickets")
-    .select("id, subject, status, department:departments(name)")
-    .limit(5);
-  if (error || !data) return fallback.tickets;
-  return data.map((ticket) => ({
-    id: ticket.id,
-    subject: ticket.subject,
-    status: ticket.status,
-    departmentName: ticket.department?.name ?? "General"
-  }));
+  try {
+    const tickets = await query<{
+      id: string;
+      subject: string;
+      status: string;
+      departmentName: string | null;
+    }>(
+      `select tickets.id, tickets.subject, tickets.status, departments.name as departmentName
+       from tickets
+       left join departments on tickets.department_id = departments.id
+       order by tickets.created_at desc
+       limit 5`
+    );
+    if (!tickets.length) return fallback.tickets;
+    return tickets.map((ticket) => ({
+      id: ticket.id,
+      subject: ticket.subject,
+      status: ticket.status,
+      departmentName: ticket.departmentName ?? "General"
+    }));
+  } catch {
+    return fallback.tickets;
+  }
 };
 
 export const getAgentQueue = async () => {
-  if (!canUseSupabase()) return fallback.queue;
-  const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("conversations")
-    .select("id, subject, department:departments(name)")
-    .eq("status", "open")
-    .limit(5);
-  if (error || !data) return fallback.queue;
-  return data.map((conversation) => ({
-    id: conversation.id,
-    title: conversation.subject ?? "Conversation",
-    preview: "Open conversation",
-    departmentName: conversation.department?.name ?? "General"
-  }));
+  try {
+    const conversations = await query<{
+      id: string;
+      subject: string | null;
+      departmentName: string | null;
+    }>(
+      `select conversations.id, conversations.subject, departments.name as departmentName
+       from conversations
+       left join departments on conversations.department_id = departments.id
+       where conversations.status = 'open'
+       order by conversations.created_at desc
+       limit 5`
+    );
+    if (!conversations.length) return fallback.queue;
+    return conversations.map((conversation) => ({
+      id: conversation.id,
+      title: conversation.subject ?? "Conversation",
+      preview: "Open conversation",
+      departmentName: conversation.departmentName ?? "General"
+    }));
+  } catch {
+    return fallback.queue;
+  }
 };
 
 export const getAdminOverview = async () => {
-  if (!canUseSupabase()) {
+  try {
+    const [departments, bots, integrations] = await Promise.all([
+      query<{ id: string; name: string; description: string | null }>(
+        `select id, name, description from departments order by created_at desc limit 5`
+      ),
+      query<{ id: string; name: string; tone: string }>(
+        `select id, name, tone from ai_bots order by created_at desc limit 5`
+      ),
+      query<{ id: string; name: string; status: string }>(
+        `select id, name, status from integrations order by created_at desc limit 5`
+      )
+    ]);
+    return {
+      departments: departments.length ? departments : fallback.departments,
+      bots: bots.length ? bots : fallback.bots,
+      integrations: integrations.length ? integrations : fallback.integrations
+    };
+  } catch {
     return {
       departments: fallback.departments,
       bots: fallback.bots,
       integrations: fallback.integrations
     };
   }
-  const supabase = createServerSupabaseClient();
-  const [departments, bots, integrations] = await Promise.all([
-    supabase.from("departments").select("id, name, description").limit(5),
-    supabase.from("ai_bots").select("id, name, tone").limit(5),
-    supabase.from("integrations").select("id, name, status").limit(5)
-  ]);
-  return {
-    departments: departments.data ?? fallback.departments,
-    bots: bots.data ?? fallback.bots,
-    integrations: integrations.data ?? fallback.integrations
-  };
 };
 
 export const getDepartmentOptions = async () => {
-  if (!canUseSupabase()) return fallback.departments;
-  const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase.from("departments").select("id, name");
-  if (error || !data) return fallback.departments;
-  return data;
+  try {
+    const departments = await query<{ id: string; name: string }>(
+      `select id, name from departments order by name asc`
+    );
+    return departments.length ? departments : fallback.departments;
+  } catch {
+    return fallback.departments;
+  }
 };
