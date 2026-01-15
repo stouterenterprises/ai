@@ -1,6 +1,6 @@
 import { query } from "@/lib/db";
 
-export type ConfigSource = "mysql";
+export type ConfigSource = "mysql" | "postgres";
 
 export type FeatureFlag = {
   key: string;
@@ -23,7 +23,7 @@ export class DatabaseConfigService implements ConfigService {
     const [business] = await query<{
       id: string;
       default_department_id: string | null;
-      allow_department_picker: number;
+      allow_department_picker: number | boolean;
     }>(
       `select id, default_department_id, allow_department_picker
        from businesses
@@ -32,7 +32,7 @@ export class DatabaseConfigService implements ConfigService {
       [businessId]
     );
 
-    const flags = await query<{ key: string; enabled: number }>(
+    const flags = await query<{ key: string; enabled: number | boolean }>(
       `select \`key\`, enabled from feature_flags where business_id = ?`,
       [businessId]
     );
