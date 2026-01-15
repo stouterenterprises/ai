@@ -1,4 +1,31 @@
-# Nimbus Support Portal Setup (AccuWeb + MySQL)
+# Nimbus Support Portal Setup
+
+## Vercel + Supabase (no CLI)
+### Supabase Database
+1. Create a Supabase project.
+2. Open **SQL Editor** and run the schema in `db/schema.postgres.sql`.
+3. Grab the **Connection string** from **Settings → Database**.
+   - Prefer the pooled connection string for serverless.
+   - Ensure the connection string includes `?sslmode=require`.
+4. Save the connection string for the `DATABASE_URL` environment variable.
+
+### Vercel Deployment
+1. Import the GitHub repo into Vercel.
+2. Vercel should auto-detect Next.js (the included `vercel.json` can stay default).
+3. Add environment variables in **Project → Settings → Environment Variables**:
+   - `DATABASE_URL` (Supabase connection string)
+   - `AI_PROVIDER_KEY`
+   - `WEBHOOK_SIGNING_SECRET`
+   - `TWILIO_ACCOUNT_SID`
+   - `TWILIO_AUTH_TOKEN`
+   - `TWILIO_PHONE_NUMBER`
+   - `SKIPCALLS_API_KEY` (optional)
+   - `SKIPCALLS_WEBHOOK_SECRET` (optional)
+4. Deploy. Vercel will build with `npm run build` automatically.
+
+### Supabase Notes
+- `DATABASE_URL` takes precedence over MySQL credentials.
+- The seed script (`npm run db:seed`) supports both MySQL and Postgres as long as the database URL or MySQL credentials are set.
 
 ## Database (phpMyAdmin / MySQL)
 1. Log into your AccuWeb hosting control panel.
@@ -17,6 +44,7 @@
    cp .env.example .env.local
    ```
 3. Populate `.env.local`:
+   - `DATABASE_URL` (Supabase Postgres connection string, optional)
    - `MYSQL_HOST`
    - `MYSQL_PORT`
    - `MYSQL_USER`

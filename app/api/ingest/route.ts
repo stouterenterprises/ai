@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { execute } from "@/lib/db";
+import { execute, getDbAdapter } from "@/lib/db";
 
 export async function POST(request: Request) {
   const { businessId, url } = await request.json();
@@ -9,12 +9,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await execute(
-      `insert into jobs (business_id, type, payload, status)
-       values (?, 'website_ingest', ?, 'queued')`,
-      [businessId, JSON.stringify({ url })]
-    );
-    const insertId = (result as { insertId: number }).insertId;
+    const adapter = getDbAdapter();
+    const sql =
+      adapter === "postgres"
+        ? `insert into jobs (business_id, type, payload, status)
+           values (?, 'website_ingest', ?, 'queued')
+           returning id`
+        : `insert into jobs (business_id, type, payload, status)
+           values (?, 'website_ingest', ?, 'queued')`;
+    const result = await execute(sql, [businessId, JSON.stringify({ url })]);
+    const insertId =
+      adapter === "postgres"
+        ? (result as { rows: { id: number }[] }).rows[0]?.id
+        : (result as { insertId: number }).insertId;
     return NextResponse.json({ job: { id: insertId } });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
