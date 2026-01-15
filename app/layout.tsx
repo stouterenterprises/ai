@@ -12,11 +12,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <div className="page">
           <header className="site-header">
-            <div>
+            <div className="site-brand">
               <p className="eyebrow">Nimbus Support</p>
               <h1>AI Support Portal</h1>
             </div>
-            <nav>
+            <input
+              className="nav-toggle"
+              type="checkbox"
+              id="nav-toggle"
+              aria-label="Toggle navigation"
+            />
+            <label className="nav-toggle-label" htmlFor="nav-toggle">
+              Menu
+            </label>
+            <nav className="site-nav">
               <a href="/help">Help Center</a>
               <a href="/widget">Widget</a>
               <a href="/portal">Customer Portal</a>
