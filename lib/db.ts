@@ -1,5 +1,4 @@
 import mysql from "mysql2/promise";
-import { Pool } from "pg";
 
 export type DbAdapter = "mysql" | "postgres";
 
@@ -45,7 +44,15 @@ const formatPostgresSql = (sql: string) => {
 };
 
 let mysqlPool: mysql.Pool | null = null;
-let postgresPool: Pool | null = null;
+type PostgresQueryResult<T> = {
+  rows: T[];
+};
+
+type PostgresPool = {
+  query: <T>(sql: string, params?: unknown[]) => Promise<PostgresQueryResult<T>>;
+};
+
+let postgresPool: PostgresPool | null = null;
 
 const getMysqlPool = () => {
   if (!mysqlPool) {
@@ -62,6 +69,9 @@ const getMysqlPool = () => {
 
 const getPostgresPool = () => {
   if (!postgresPool) {
+    const { Pool } = require("pg") as {
+      Pool: new (config: ReturnType<typeof getPostgresConfig>) => PostgresPool;
+    };
     postgresPool = new Pool(getPostgresConfig());
   }
   return postgresPool;
