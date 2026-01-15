@@ -30,7 +30,7 @@ export const runRag = async (question: string, businessId?: string): Promise<Rag
     input: question
   });
 
-  const query = embedding.data[0]?.embedding ?? [];
+  const embeddingVector = embedding.data[0]?.embedding ?? [];
   const chunks = await query<{
     id: string;
     title: string;
@@ -48,7 +48,7 @@ export const runRag = async (question: string, businessId?: string): Promise<Rag
   const scored = chunks
     .map((chunk) => {
       const embedding = chunk.embedding ? (JSON.parse(chunk.embedding) as number[]) : [];
-      const similarity = cosineSimilarity(query, embedding);
+      const similarity = cosineSimilarity(embeddingVector, embedding);
       return { ...chunk, similarity };
     })
     .sort((a, b) => b.similarity - a.similarity)
