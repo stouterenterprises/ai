@@ -138,6 +138,48 @@ button {
   cursor: pointer;
 }
 
+.code-snippet {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.code-snippet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.code-block {
+  margin: 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.copy-button {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
 .list {
   list-style: none;
   padding: 0;
