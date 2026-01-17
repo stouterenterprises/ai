@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-export default function ChatComposer() {
+interface ChatComposerProps {
+  departmentId?: string;
+}
+
+export default function ChatComposer({ departmentId }: ChatComposerProps) {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +21,10 @@ export default function ChatComposer() {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: nextMessages })
+      body: JSON.stringify({
+        messages: nextMessages,
+        departmentId: departmentId || undefined
+      })
     });
 
     const payload = await response.json();
