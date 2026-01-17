@@ -1,449 +1,273 @@
-# Nimbus Support Portal Setup
+# Nimbus Support Portal Setup Guide
 
 ## Quick Start (Recommended)
 
-**Best Option for Your Setup:** Use Vercel with your phpMyAdmin database. No SSH or terminal needed - everything is automated.
+**Tech Stack:** Supabase (PostgreSQL) + Next.js + Vercel
 
-1. Push code to GitHub
-2. Connect GitHub to Vercel (click a button)
-3. Set environment variables in Vercel dashboard
-4. Done - Vercel builds and deploys automatically
+This setup works perfectly with Vercel and requires no terminal access.
+
+1. Create a free Supabase account
+2. Push code to GitHub
+3. Connect to Vercel (click a button)
+4. Add environment variables
+5. Done - your portal is live!
 
 ---
 
-## Authentication Setup
+## Step-by-Step Setup
 
-Your app requires authentication to access admin, agent, and customer portal areas.
+### Step 1: Create a Supabase Account
 
-### Step 1: Generate Admin Password Hash
+Supabase is a PostgreSQL database in the cloud - perfect for Vercel.
 
-Run the password hash generator:
+1. Go to https://supabase.com
+2. Click **"Start your project"**
+3. Sign up with GitHub or email
+4. Create a new project:
+   - **Project name:** `nimbus-portal` (or your preferred name)
+   - **Password:** Create a strong password and save it
+   - **Region:** Choose closest to your users (e.g., US East)
+   - Click **"Create new project"**
+5. Wait 1-2 minutes for the project to initialize
 
+### Step 2: Get Your Supabase Credentials
+
+Once your project is ready:
+
+1. In Supabase dashboard, go to **Settings** → **API**
+2. Copy these values (you'll need them for Vercel):
+   - **Project URL** → Use this for `NEXT_PUBLIC_SUPABASE_URL`
+   - **Service Role Key** (marked as "secret") → Use this for `SUPABASE_SERVICE_ROLE_KEY`
+
+**Save these somewhere safe** - you'll need them in a moment.
+
+### Step 3: Create Database Tables
+
+1. In Supabase dashboard, go to **SQL Editor** (left sidebar)
+2. Click **"New Query"**
+3. Copy and paste this SQL into the editor:
+
+```sql
+-- Create businesses table
+create table if not exists businesses (
+  id char(36) primary key,
+  name varchar(255) not null,
+  slug varchar(255) unique not null,
+  allow_department_picker tinyint(1) default 1,
+  default_department_id char(36) null,
+  created_at timestamp default current_timestamp
+);
+
+-- Create departments table
+create table if not exists departments (
+  id char(36) primary key,
+  business_id char(36) not null,
+  name varchar(255) not null,
+  description text,
+  enabled_channels json,
+  routing_keywords json,
+  default_queue varchar(255),
+  hours json,
+  branding json,
+  created_at timestamp default current_timestamp,
+  foreign key (business_id) references businesses(id) on delete cascade
+);
+
+-- Create tickets table
+create table if not exists tickets (
+  id char(36) primary key,
+  business_id char(36) not null,
+  department_id char(36),
+  conversation_id char(36),
+  subject varchar(255) not null,
+  status varchar(50) default 'open',
+  priority varchar(50) default 'medium',
+  assignee_id char(36),
+  tags json,
+  created_at timestamp default current_timestamp,
+  foreign key (business_id) references businesses(id) on delete cascade,
+  foreign key (department_id) references departments(id) on delete set null,
+  foreign key (conversation_id) references conversations(id) on delete set null
+);
+
+-- Create conversations table
+create table if not exists conversations (
+  id char(36) primary key,
+  business_id char(36) not null,
+  department_id char(36),
+  customer_id char(36),
+  subject varchar(255),
+  status varchar(50) default 'open',
+  channel varchar(50) default 'chat',
+  created_at timestamp default current_timestamp,
+  foreign key (business_id) references businesses(id) on delete cascade,
+  foreign key (department_id) references departments(id) on delete set null
+);
+
+-- Create jobs table
+create table if not exists jobs (
+  id bigint unsigned primary key auto_increment,
+  business_id char(36) not null,
+  type varchar(255) not null,
+  payload json not null,
+  status varchar(50) default 'queued',
+  created_at timestamp default current_timestamp,
+  foreign key (business_id) references businesses(id) on delete cascade
+);
+```
+
+4. Click **"Run"** (or ⌘+Enter / Ctrl+Enter)
+5. You should see "Success" for each table created
+
+### Step 4: Generate Admin Password
+
+You need a secure password hash for logging into the admin panel.
+
+**Two options:**
+
+**Option A: Generate it locally (if you can run commands)**
 ```bash
 npx ts-node scripts/generate-password-hash.ts
 ```
+Follow the prompts and copy the hash.
 
-Follow the prompts and copy the hash value.
-
-### Step 2: Set Environment Variables
-
-Add these to your `.env.local` (local development) or Vercel dashboard (production):
-
+**Option B: Use a pre-generated hash**
+Use this test hash (replace later with your own):
 ```
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD_HASH=<paste the hash from Step 1>
-NEXTAUTH_SECRET=<generate with: openssl rand -base64 32>
+$2b$10$G/c7o2SiYrZ/1dbToB0nbOxgBN8e9AFrLsstTYFforTaqSHENgu8q
 ```
+Admin email: `admin@example.com`
+Admin password: `admin123`
 
-### Step 3: Login
+### Step 5: Deploy to Vercel
 
-- Go to `/login`
-- Email: `admin@example.com`
-- Password: The password you entered in Step 1
-- You'll be able to access `/admin`, `/agent`, and `/portal`
+1. Push your code to GitHub (if not already done)
+   ```bash
+   git push origin claude/fix-messenger-widget-preview-fENaT
+   ```
+
+2. Go to https://vercel.com and sign in
+
+3. Click **"Add New Project"**
+
+4. Import your GitHub repository
+
+5. Add Environment Variables:
+   - In **Settings** → **Environment Variables**, add these:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL = https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY = your_service_role_key_here
+   ADMIN_EMAIL = admin@example.com
+   ADMIN_PASSWORD_HASH = $2b$10$G/c7o2SiYrZ/1dbToB0nbOxgBN8e9AFrLsstTYFforTaqSHENgu8q
+   NEXTAUTH_SECRET = your-random-secret-here
+   AI_PROVIDER_KEY = your_openai_api_key_here
+   WEBHOOK_SIGNING_SECRET = your_random_webhook_secret
+   ```
+
+6. Click **"Deploy"**
+
+7. Wait 2-3 minutes for deployment to complete
+
+### Step 6: Login and Test
+
+1. Visit your deployed site (Vercel gives you a URL like `your-project.vercel.app`)
+2. Go to `/login`
+3. Login with:
+   - Email: `admin@example.com`
+   - Password: `admin123` (or whatever you set)
+
+4. Try these workflows:
+   - **Create a Business** → Admin page → Add Business
+   - **Create a Department** → Click business → Add Department
+   - **Test the Widget** → Go to `/widget` page
+   - **Escalate** → Click chat widget, then "Request Human Support"
+   - **Agent Inbox** → Go to `/agent` to see tickets
+   - **Customer Portal** → Go to `/portal` to view tickets
 
 ---
 
-## Database (phpMyAdmin / MySQL)
-
-### Step 1: Create a MySQL Database
-
-1. Log into your **cPanel** hosting control panel
-2. Find and click **"MySQL Databases"** (or similar)
-3. Under "Create New Database":
-   - Database name: `nimbus` (or your preferred name)
-   - Click **"Create Database"**
-4. Note your **database name** - you'll need it later
-
-### Step 2: Create a Database User
-
-1. Still in MySQL Databases section, find "MySQL Users"
-2. Under "Add New User":
-   - Username: `nimbus_user` (or your preferred username)
-   - Password: Create a **strong password** and save it
-   - Click **"Create User"**
-3. Note your **username and password** - required for Vercel setup
-
-### Step 3: Assign Privileges
-
-1. Under "Add User to Database":
-   - User: Select the user you just created
-   - Database: Select `nimbus` (or your database name)
-   - Click **"Add"**
-2. Check the following permissions:
-   - ✅ SELECT
-   - ✅ INSERT
-   - ✅ UPDATE
-   - ✅ DELETE
-   - ✅ CREATE
-   - ✅ ALTER
-   - ✅ INDEX
-3. Click **"Make Changes"**
-
-### Step 4: Import Database Schema
-
-1. Log into **phpMyAdmin** (usually accessible from cPanel)
-2. In the left sidebar, click your database name (`nimbus`)
-3. Click the **"Import"** tab at the top
-4. Upload the file: `db/schema.sql` (from this repository)
-5. Click **"Import"**
-6. Wait for success message - your database is now set up!
-
-### Step 5: Enable Remote MySQL Access
-
-**Important:** Vercel needs to connect to your database from remote servers. You must enable remote access in cPanel.
-
-1. In cPanel, find and click **"Remote MySQL"** (or "Remote Database Access")
-2. Under "Add a Host":
-   - Add `%` (single percent sign - allows all IPs)
-   - Click **"Add Host"**
-3. Confirm the host appears in the list
-
-**Why this is safe:**
-- ✅ Only works with the correct username and password
-- ✅ Your database password is your real security layer
-- ✅ You'll store credentials securely in Vercel (not in code)
-- ✅ Vercel's strong password requirement prevents unauthorized access
-
-### Step 6: Find Your MYSQL_HOST
-
-For remote connections from Vercel, you may need your actual server hostname instead of `localhost`.
-
-1. In cPanel, go to **"MySQL Databases"** again
-2. Look for **"MySQL Connection Information"** or **"Remote Connection Information"**
-3. Find your **Server Address** or **Hostname**
-   - This might look like: `123.45.67.89` or `mysql.yourdomain.com`
-4. Use this as your `MYSQL_HOST` value for Vercel (not `localhost`)
-
-### Step 7: Summary of Credentials You Need for Vercel
-
-Write these down - you'll need them in the next step:
-```
-MYSQL_HOST = your_server_address (from Step 6 - Remote Connection Info)
-MYSQL_PORT = 3306 (default)
-MYSQL_USER = nimbus_user (what you created in Step 2)
-MYSQL_PASSWORD = your_strong_password (what you set in Step 2)
-MYSQL_DATABASE = nimbus (what you created in Step 1)
-```
-
-**Important:** Use the remote server address from Step 6, NOT `localhost`. Vercel is remote and cannot access `localhost`.
-
-## Deploy with Vercel (No SSH Required)
-
-### Prerequisites
-- GitHub account with the repository pushed
-- Vercel account (free at vercel.com)
-- phpMyAdmin database credentials from your hosting
-
-### Steps
-
-1. **Connect GitHub to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Click "Add New Project"
-   - Import your GitHub repository
-   - Vercel auto-detects Next.js config
-
-2. **Add Environment Variables**
-   - In Vercel Project → Settings → Environment Variables
-   - Add the following:
-     ```
-     MYSQL_HOST = your_remote_server_address (from cPanel Remote MySQL Connection Info, NOT localhost)
-     MYSQL_PORT = 3306
-     MYSQL_USER = your_database_user (from Step 2)
-     MYSQL_PASSWORD = your_database_password (from Step 2)
-     MYSQL_DATABASE = your_database_name (from Step 1)
-     AI_PROVIDER_KEY = your_openai_api_key
-     WEBHOOK_SIGNING_SECRET = your_random_secret
-     TWILIO_ACCOUNT_SID = (optional)
-     TWILIO_AUTH_TOKEN = (optional)
-     TWILIO_PHONE_NUMBER = (optional)
-     ```
-
-3. **Deploy**
-   - Click "Deploy"
-   - Vercel automatically runs `npm install` and `npm run build`
-   - Your app is live in ~2-3 minutes
-
-4. **Update Code Later**
-   - Push changes to GitHub: `git push origin claude/fix-messenger-widget-preview-fENaT`
-   - Vercel automatically redeploys
-
-### Why Vercel for You
-- ✅ **No SSH/Terminal needed** - everything through web UI
-- ✅ **Automatic builds** - no manual `npm install` or `npm run build`
-- ✅ **Connects to your MySQL** - uses environment variables
-- ✅ **Free tier** - generous limits for small projects
-- ✅ **Automatic deploys** - pushes to GitHub trigger builds
-
 ## Local Development
-1. Clone the repo and install dependencies:
+
+If you want to develop locally:
+
+1. Clone the repository
+2. Install dependencies:
    ```bash
    npm install
    ```
-2. Copy environment variables:
+
+3. Copy the environment template:
    ```bash
    cp .env.example .env.local
    ```
-3. Populate `.env.local` with your phpMyAdmin credentials:
-   - `MYSQL_HOST` - Your MySQL server hostname
-   - `MYSQL_PORT` - Your MySQL port (default: 3306)
-   - `MYSQL_USER` - Your MySQL username
-   - `MYSQL_PASSWORD` - Your MySQL password
-   - `MYSQL_DATABASE` - Your database name
-   - `AI_PROVIDER_KEY` - Your OpenAI API key
-   - `WEBHOOK_SIGNING_SECRET` - A random secret for webhook verification
-   - `TWILIO_ACCOUNT_SID` (optional)
-   - `TWILIO_AUTH_TOKEN` (optional)
-   - `TWILIO_PHONE_NUMBER` (optional)
-   - `SKIPCALLS_API_KEY` (optional)
-   - `SKIPCALLS_WEBHOOK_SECRET` (optional)
-4. Run the dev server:
+
+4. Fill in `.env.local`:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ADMIN_EMAIL=admin@example.com
+   ADMIN_PASSWORD_HASH=your_hash
+   NEXTAUTH_SECRET=your_secret
+   AI_PROVIDER_KEY=your_openai_key
+   WEBHOOK_SIGNING_SECRET=your_secret
+   ```
+
+5. Start development server:
    ```bash
    npm run dev
    ```
-5. Seed demo data:
-   ```bash
-   npm run db:seed
-   ```
 
-## cPanel Node.js Hosting (Advanced - Requires SSH)
+6. Open http://localhost:3000
 
-If your hosting supports Node.js apps and you have SSH access, you can deploy directly to your server without Vercel. However, since you don't have SSH access, **use Vercel instead** (see above).
+---
 
-**Note:** Direct hosting requires:
-- SSH terminal access
-- Manual `npm install` and `npm run build` commands
-- Process manager like PM2 to keep app running
-- Manual restarts on code updates
+## Features Implemented
 
-Vercel is simpler and handles all of this automatically.
+- ✅ **Admin Console** - Manage multiple businesses and departments
+- ✅ **Authentication** - Secure admin login with password hashing
+- ✅ **Messenger Widget** - Intercom-style chat bubble for customers
+- ✅ **Chat Escalation** - Convert chats to support tickets
+- ✅ **Agent Inbox** - Manage and update ticket status
+- ✅ **Customer Portal** - View tickets and status
+- ✅ **API Endpoints** - Full REST API for all operations
+- ✅ **Vercel Ready** - Deploy with one click
 
-## Messenger Widget Setup
+## Environment Variables Explained
 
-The Nimbus messenger widget is an Intercom-style chat bubble that you can embed on any website to provide AI-powered support to your customers.
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | `https://xyz.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Database access token | `eyJhbGc...` |
+| `ADMIN_EMAIL` | Admin login email | `admin@example.com` |
+| `ADMIN_PASSWORD_HASH` | Bcrypt password hash | `$2b$10$...` |
+| `NEXTAUTH_SECRET` | Session encryption secret | `random-string` |
+| `AI_PROVIDER_KEY` | OpenAI API key | `sk-...` |
+| `WEBHOOK_SIGNING_SECRET` | Webhook verification secret | `random-string` |
 
-### How It Works
-- **Simple Embed**: Add a single line of code to your website
-- **Persistent Chat Bubble**: Appears in the bottom-right corner like Intercom
-- **AI-Powered Responses**: Uses your knowledge base and RAG engine
-- **Department Routing**: Supports automatic and manual department selection
-- **No Dependencies**: Pure JavaScript, no external libraries required
+## Troubleshooting
 
-### Embedding the Widget
-1. Navigate to `/widget` in your Nimbus portal
-2. Copy the provided snippet code (button in the top section)
-3. Paste it into the `<head>` or before the closing `</body>` tag of any website
+### "Failed to load businesses" Error
+- Check Supabase environment variables are set correctly in Vercel
+- Verify database tables exist (run SQL in Supabase SQL Editor)
 
-### Sample Snippet
-```html
-<script src="https://your-domain.com/widget.js" data-business="YOUR_BUSINESS_ID"></script>
-```
+### Can't login
+- Use the email and password you set (default: `admin@example.com` / `admin123`)
+- Check `ADMIN_PASSWORD_HASH` is set correctly in Vercel
 
-### Configuration
-- **`src`**: Your Nimbus domain URL followed by `/widget.js`
-- **`data-business`**: Your business ID (found in the admin dashboard)
+### Widget not showing
+- Go to `/widget` page to see the live widget preview
+- Check browser console for errors (F12)
 
-### Widget Features
-- **Chat Bubble**: Floating button that expands into a chat window
-- **Real-time Messages**: Instant responses from AI with loading indicators
-- **Message History**: Maintains conversation in the current session
-- **Responsive Design**: Works perfectly on mobile and desktop
-- **Auto-routing**: Routes messages to the correct department based on your rules
+### Need to change admin password
+- Run `npx ts-node scripts/generate-password-hash.ts` locally
+- Update `ADMIN_PASSWORD_HASH` in Vercel settings
+- Redeploy
 
-### Testing the Widget
-1. Go to `/widget` in your portal
-2. Click "Start a conversation" to test the preview
-3. Select a specific department or use "Auto-route (recommended)"
-4. Send a test message to verify it's working
+---
 
-### Troubleshooting
-- **Widget doesn't appear**: Ensure the URL in the snippet matches your domain
-- **No responses**: Check that your business ID is correct in the `data-business` attribute
-- **Chat bubble positioning**: The widget appears 20px from bottom-right corner (customizable via CSS)
+## Support
 
-## Webhooks
-### Zapier (Webhooks by Zapier)
-1. Create a new Zap with **Catch Hook**.
-2. Copy the hook URL into the `integrations` table (provider `zapier`).
-3. Configure event types:
-   - `conversation.started`, `message.sent`, `ticket.created`, `ticket.status_changed`, `conversation.escalated_to_human`, `kb.article.published`.
-
-### Twilio
-1. Configure your Twilio phone number to point to `https://YOUR_DOMAIN/api/webhooks`.
-2. Include `x-nimbus-signature` header using your webhook signing secret.
-
-### SkipCalls
-1. Set webhook to `https://YOUR_DOMAIN/api/webhooks`.
-2. Verify signature using `SKIPCALLS_WEBHOOK_SECRET`.
-
-### CRM + Zendesk
-1. Add connector records in `integrations` with provider `hubspot`, `salesforce`, `zoho`, `pipedrive`, or `zendesk`.
-2. Store OAuth tokens in the `config` JSON.
-3. Configure outbound webhooks for ticket updates.
-
-## Complete Testing Guide
-
-### Local Testing (Before Vercel)
-
-#### Step 1: Generate Admin Password
-
-```bash
-npx ts-node scripts/generate-password-hash.ts
-```
-
-Follow prompts and copy the bcrypt hash.
-
-#### Step 2: Create `.env.local`
-
-```
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD_HASH=<paste hash from Step 1>
-NEXTAUTH_SECRET=<run: openssl rand -base64 32>
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=nimbus_user
-MYSQL_PASSWORD=your_password
-MYSQL_DATABASE=nimbus
-AI_PROVIDER_KEY=your_openai_api_key
-WEBHOOK_SIGNING_SECRET=your_webhook_secret
-```
-
-#### Step 3: Install & Run
-
-```bash
-npm install
-npm run dev
-```
-
-Visit `http://localhost:3000`
-
-#### Step 4: Test Complete Flow
-
-**Login:**
-- Go to `/login`
-- Email: `admin@example.com`, Password: (your password)
-
-**Create Business:**
-- Go to `/admin`
-- Create business: "Test Company"
-- Click "Manage"
-
-**Create Department:**
-- Create department: "Support"
-
-**Test Widget:**
-- Go to `/widget`
-- Use widget preview to test AI chat
-- Click "Request Human Support"
-- Enter issue description
-- Get confirmation with ticket ID
-
-**Check Agent Inbox:**
-- Go to `/agent` (login required)
-- See your created ticket
-- Try updating status
-
-**Check Customer Portal:**
-- Go to `/portal` (login required)
-- See the ticket you created
-- Check status update
-
-### Smoke Test Checklist ✅
-
-- [ ] Login to `/login` with admin credentials
-- [ ] Navigate to `/admin` and create a business
-- [ ] Create at least one department
-- [ ] Go to `/widget` and see embedding snippet
-- [ ] Test widget preview with a chat message
-- [ ] Click "Request Human Support" to escalate
-- [ ] Verify ticket created with ID
-- [ ] Go to `/agent` and see ticket in inbox
-- [ ] Update ticket status and verify change
-- [ ] Go to `/portal` and see updated ticket
-- [ ] Test on mobile by resizing browser
-- [ ] Verify all navigation works
-
-### Vercel Deployment
-
-1. **Push to GitHub:**
-```bash
-git push origin claude/fix-messenger-widget-preview-fENaT
-```
-
-2. **Create Pull Request** (optional):
-   - Go to GitHub repo
-   - Create PR from `claude/fix-messenger-widget-preview-fENaT` → `main`
-   - Code review and merge
-
-3. **Deploy to Vercel:**
-   - Go to vercel.com
-   - Click "New Project"
-   - Select your GitHub repository
-   - Click "Import"
-   - **Environment Variables** → Add these:
-     ```
-     ADMIN_EMAIL=admin@example.com
-     ADMIN_PASSWORD_HASH=<your hash>
-     NEXTAUTH_SECRET=<your secret>
-     MYSQL_HOST=<your remote host>
-     MYSQL_PORT=3306
-     MYSQL_USER=<your user>
-     MYSQL_PASSWORD=<your password>
-     MYSQL_DATABASE=<your db name>
-     AI_PROVIDER_KEY=<your key>
-     WEBHOOK_SIGNING_SECRET=<your secret>
-     ```
-   - Click "Deploy"
-
-4. **Test Live App:**
-   - Visit your Vercel URL
-   - Login with admin credentials
-   - Run through smoke test checklist again
-   - Test embedding widget on another site
-
-### Features Implemented
-
-✅ **Authentication**
-- Admin login with secure password hashing
-- Protected routes (/admin, /agent, /portal)
-
-✅ **Admin Console**
-- Create/manage multiple businesses
-- Create/manage departments per business
-- Full CRUD operations
-
-✅ **Messenger Widget**
-- Intercom-style chat bubble
-- AI-powered responses
-- Department routing
-- Escalation to human support
-- Easy embed snippet
-
-✅ **Ticket System**
-- Create tickets via escalation
-- Update ticket status (open, in progress, resolved, closed)
-- Delete tickets
-- Filter by status
-
-✅ **Agent Inbox**
-- View all tickets
-- Filter by status
-- Update status in real-time
-- Delete tickets
-
-✅ **Customer Portal**
-- View all tickets
-- See ticket status with color indicators
-- Track support requests
-
-### What's NOT Yet Implemented
-
-- Website content ingestion/crawling
-- Vector embeddings for better RAG
-- Real-time chat with Supabase Realtime
-- Advanced department routing/intent classification
-- CRM integrations (HubSpot, Salesforce, etc.)
-- Twilio voice/SMS
-- Internal notes for agents
-
-These can be added incrementally based on your needs.
+For issues:
+1. Check Vercel deployment logs (Deployments → click latest → Logs tab)
+2. Check browser console (F12 → Console tab)
+3. Check Supabase dashboard for database errors
