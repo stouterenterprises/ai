@@ -30,10 +30,33 @@ export default function BusinessPage({ params }: { params: { businessId: string 
   const [isCreatingDept, setIsCreatingDept] = useState(false);
 
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [businessRes, deptRes] = await Promise.all([
+          fetch(`/api/businesses/${params.businessId}`),
+          fetch(`/api/departments/${params.businessId}`)
+        ]);
+
+        if (!businessRes.ok || !deptRes.ok) {
+          throw new Error("Failed to load data");
+        }
+
+        const businessData = await businessRes.json();
+        const deptData = await deptRes.json();
+
+        setBusiness(businessData);
+        setDepartments(deptData);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadData();
   }, [params.businessId]);
 
-  const loadData = async () => {
+  const reloadData = async () => {
     try {
       const [businessRes, deptRes] = await Promise.all([
         fetch(`/api/businesses/${params.businessId}`),
@@ -51,8 +74,6 @@ export default function BusinessPage({ params }: { params: { businessId: string 
       setDepartments(deptData);
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -75,7 +96,7 @@ export default function BusinessPage({ params }: { params: { businessId: string 
 
       setNewDeptName("");
       setNewDeptDesc("");
-      await loadData();
+      await reloadData();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -93,7 +114,7 @@ export default function BusinessPage({ params }: { params: { businessId: string 
       );
 
       if (!res.ok) throw new Error("Failed to delete department");
-      await loadData();
+      await reloadData();
     } catch (err) {
       setError((err as Error).message);
     }

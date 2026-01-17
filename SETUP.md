@@ -281,11 +281,169 @@ The Nimbus messenger widget is an Intercom-style chat bubble that you can embed 
 2. Store OAuth tokens in the `config` JSON.
 3. Configure outbound webhooks for ticket updates.
 
-## Smoke Test Checklist
-- Create a business and multiple departments.
-- Ingest a website via `/api/ingest`.
-- Load `/widget` and start a conversation.
-- Verify AI answers include citations.
-- Escalate to agent and create a ticket.
-- Confirm the ticket appears in `/portal`.
-- Trigger a Zapier webhook.
+## Complete Testing Guide
+
+### Local Testing (Before Vercel)
+
+#### Step 1: Generate Admin Password
+
+```bash
+npx ts-node scripts/generate-password-hash.ts
+```
+
+Follow prompts and copy the bcrypt hash.
+
+#### Step 2: Create `.env.local`
+
+```
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD_HASH=<paste hash from Step 1>
+NEXTAUTH_SECRET=<run: openssl rand -base64 32>
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=nimbus_user
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=nimbus
+AI_PROVIDER_KEY=your_openai_api_key
+WEBHOOK_SIGNING_SECRET=your_webhook_secret
+```
+
+#### Step 3: Install & Run
+
+```bash
+npm install
+npm run dev
+```
+
+Visit `http://localhost:3000`
+
+#### Step 4: Test Complete Flow
+
+**Login:**
+- Go to `/login`
+- Email: `admin@example.com`, Password: (your password)
+
+**Create Business:**
+- Go to `/admin`
+- Create business: "Test Company"
+- Click "Manage"
+
+**Create Department:**
+- Create department: "Support"
+
+**Test Widget:**
+- Go to `/widget`
+- Use widget preview to test AI chat
+- Click "Request Human Support"
+- Enter issue description
+- Get confirmation with ticket ID
+
+**Check Agent Inbox:**
+- Go to `/agent` (login required)
+- See your created ticket
+- Try updating status
+
+**Check Customer Portal:**
+- Go to `/portal` (login required)
+- See the ticket you created
+- Check status update
+
+### Smoke Test Checklist ✅
+
+- [ ] Login to `/login` with admin credentials
+- [ ] Navigate to `/admin` and create a business
+- [ ] Create at least one department
+- [ ] Go to `/widget` and see embedding snippet
+- [ ] Test widget preview with a chat message
+- [ ] Click "Request Human Support" to escalate
+- [ ] Verify ticket created with ID
+- [ ] Go to `/agent` and see ticket in inbox
+- [ ] Update ticket status and verify change
+- [ ] Go to `/portal` and see updated ticket
+- [ ] Test on mobile by resizing browser
+- [ ] Verify all navigation works
+
+### Vercel Deployment
+
+1. **Push to GitHub:**
+```bash
+git push origin claude/fix-messenger-widget-preview-fENaT
+```
+
+2. **Create Pull Request** (optional):
+   - Go to GitHub repo
+   - Create PR from `claude/fix-messenger-widget-preview-fENaT` → `main`
+   - Code review and merge
+
+3. **Deploy to Vercel:**
+   - Go to vercel.com
+   - Click "New Project"
+   - Select your GitHub repository
+   - Click "Import"
+   - **Environment Variables** → Add these:
+     ```
+     ADMIN_EMAIL=admin@example.com
+     ADMIN_PASSWORD_HASH=<your hash>
+     NEXTAUTH_SECRET=<your secret>
+     MYSQL_HOST=<your remote host>
+     MYSQL_PORT=3306
+     MYSQL_USER=<your user>
+     MYSQL_PASSWORD=<your password>
+     MYSQL_DATABASE=<your db name>
+     AI_PROVIDER_KEY=<your key>
+     WEBHOOK_SIGNING_SECRET=<your secret>
+     ```
+   - Click "Deploy"
+
+4. **Test Live App:**
+   - Visit your Vercel URL
+   - Login with admin credentials
+   - Run through smoke test checklist again
+   - Test embedding widget on another site
+
+### Features Implemented
+
+✅ **Authentication**
+- Admin login with secure password hashing
+- Protected routes (/admin, /agent, /portal)
+
+✅ **Admin Console**
+- Create/manage multiple businesses
+- Create/manage departments per business
+- Full CRUD operations
+
+✅ **Messenger Widget**
+- Intercom-style chat bubble
+- AI-powered responses
+- Department routing
+- Escalation to human support
+- Easy embed snippet
+
+✅ **Ticket System**
+- Create tickets via escalation
+- Update ticket status (open, in progress, resolved, closed)
+- Delete tickets
+- Filter by status
+
+✅ **Agent Inbox**
+- View all tickets
+- Filter by status
+- Update status in real-time
+- Delete tickets
+
+✅ **Customer Portal**
+- View all tickets
+- See ticket status with color indicators
+- Track support requests
+
+### What's NOT Yet Implemented
+
+- Website content ingestion/crawling
+- Vector embeddings for better RAG
+- Real-time chat with Supabase Realtime
+- Advanced department routing/intent classification
+- CRM integrations (HubSpot, Salesforce, etc.)
+- Twilio voice/SMS
+- Internal notes for agents
+
+These can be added incrementally based on your needs.

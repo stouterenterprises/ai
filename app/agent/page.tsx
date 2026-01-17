@@ -18,10 +18,29 @@ export default function AgentPage() {
   const [filterStatus, setFilterStatus] = useState("open");
 
   useEffect(() => {
+    const loadTickets = async () => {
+      try {
+        const url = new URL("/api/tickets", window.location.origin);
+        if (filterStatus) {
+          url.searchParams.set("status", filterStatus);
+        }
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to load tickets");
+
+        const data = await res.json();
+        setTickets(data);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadTickets();
   }, [filterStatus]);
 
-  const loadTickets = async () => {
+  const reloadTickets = async () => {
     try {
       const url = new URL("/api/tickets", window.location.origin);
       if (filterStatus) {
@@ -35,8 +54,6 @@ export default function AgentPage() {
       setTickets(data);
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -49,7 +66,7 @@ export default function AgentPage() {
       });
 
       if (!res.ok) throw new Error("Failed to update ticket");
-      await loadTickets();
+      await reloadTickets();
     } catch (err) {
       setError((err as Error).message);
     }
@@ -64,7 +81,7 @@ export default function AgentPage() {
       });
 
       if (!res.ok) throw new Error("Failed to delete ticket");
-      await loadTickets();
+      await reloadTickets();
     } catch (err) {
       setError((err as Error).message);
     }
@@ -112,7 +129,7 @@ export default function AgentPage() {
         {isLoading ? (
           <p>Loading tickets...</p>
         ) : tickets.length === 0 ? (
-          <p style={{ color: "#666" }}>No tickets with status "{filterStatus}"</p>
+          <p style={{ color: "#666" }}>No tickets with status &quot;{filterStatus}&quot;</p>
         ) : (
           <div className="list">
             {tickets.map((ticket) => (

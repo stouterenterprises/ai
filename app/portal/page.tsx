@@ -17,22 +17,22 @@ export default function PortalPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const loadTickets = async () => {
+      try {
+        const res = await fetch("/api/tickets");
+        if (!res.ok) throw new Error("Failed to load tickets");
+
+        const data = await res.json();
+        setTickets(data);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadTickets();
   }, []);
-
-  const loadTickets = async () => {
-    try {
-      const res = await fetch("/api/tickets");
-      if (!res.ok) throw new Error("Failed to load tickets");
-
-      const data = await res.json();
-      setTickets(data);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -69,7 +69,7 @@ export default function PortalPage() {
           <p>Loading your tickets...</p>
         ) : tickets.length === 0 ? (
           <p style={{ color: "#666" }}>
-            You don't have any tickets yet. Start a chat with our support team using the widget to escalate an issue.
+            You don&apos;t have any tickets yet. Start a chat with our support team using the widget to escalate an issue.
           </p>
         ) : (
           <div className="list">

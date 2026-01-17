@@ -1,7 +1,23 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { compare } from "bcrypt";
+import { compare } from "bcryptjs";
 import { query } from "@/lib/db";
+
+declare module "next-auth" {
+  interface User {
+    id?: string;
+    role?: string;
+  }
+  interface Session {
+    user?: {
+      id?: string;
+      role?: string;
+      email?: string;
+      name?: string;
+      image?: string;
+    };
+  }
+}
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
@@ -40,14 +56,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login"
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
-        token.role = user.role || "admin";
-        token.id = user.id;
+        token.role = (user as any).role || "admin";
+        token.id = (user as any).id;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;

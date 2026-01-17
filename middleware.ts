@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 const protectedRoutes = ["/admin", "/agent", "/portal"];
 
 export async function middleware(request: NextRequest) {

@@ -1,4 +1,4 @@
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import * as readline from "readline";
 
 const rl = readline.createInterface({
