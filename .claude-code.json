@@ -1,0 +1,122 @@
+{
+  "name": "Nimbus Support Portal",
+  "description": "AI-powered support portal with multi-business management",
+  "version": "0.1.0",
+  "settings": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "entryPoints": [
+      "app/page.tsx",
+      "app/login/page.tsx",
+      "app/admin/page.tsx",
+      "app/agent/page.tsx",
+      "app/portal/page.tsx",
+      "app/widget/page.tsx"
+    ]
+  },
+  "buildChecks": {
+    "typeScriptStrict": true,
+    "eslintEnabled": true,
+    "buildOnSave": true,
+    "failOnLintErrors": true
+  },
+  "language": "typescript",
+  "framework": "next",
+  "nodeVersion": "18.0.0",
+  "npmVersion": "9.0.0",
+  "environment": {
+    "NODE_ENV": "development"
+  },
+  "excludePatterns": [
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    ".git",
+    ".cache"
+  ],
+  "codingStandards": {
+    "typescript": {
+      "strict": true,
+      "noImplicitAny": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "noImplicitReturns": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true
+    },
+    "eslint": {
+      "extends": [
+        "next/core-web-vitals"
+      ],
+      "rules": {
+        "react/no-unescaped-entities": "error",
+        "react-hooks/exhaustive-deps": "warn",
+        "@next/next/no-html-link-for-pages": "error"
+      }
+    }
+  },
+  "apiEndpoints": [
+    "POST /api/auth/[...nextauth]",
+    "GET /api/businesses",
+    "POST /api/businesses",
+    "GET /api/businesses/[id]",
+    "PUT /api/businesses/[id]",
+    "DELETE /api/businesses/[id]",
+    "GET /api/departments/[businessId]",
+    "POST /api/departments/[businessId]",
+    "GET /api/departments/[businessId]/[departmentId]",
+    "PUT /api/departments/[businessId]/[departmentId]",
+    "DELETE /api/departments/[businessId]/[departmentId]",
+    "GET /api/tickets",
+    "POST /api/tickets",
+    "GET /api/tickets/[ticketId]",
+    "PUT /api/tickets/[ticketId]",
+    "DELETE /api/tickets/[ticketId]",
+    "POST /api/escalate",
+    "POST /api/chat",
+    "POST /api/webhooks",
+    "POST /api/ingest"
+  ],
+  "protectedRoutes": [
+    "/admin",
+    "/agent",
+    "/portal"
+  ],
+  "publicRoutes": [
+    "/",
+    "/login",
+    "/help",
+    "/widget"
+  ],
+  "knownIssues": [
+    {
+      "id": "bcryptjs-native-bindings",
+      "description": "Using bcryptjs instead of bcrypt for Vercel serverless compatibility",
+      "resolution": "bcryptjs provides pure JavaScript implementation without native bindings"
+    },
+    {
+      "id": "nextauth-runtime",
+      "description": "Middleware requires Node.js runtime for auth operations",
+      "resolution": "Added export const runtime = 'nodejs' to middleware.ts"
+    },
+    {
+      "id": "use-search-params-suspense",
+      "description": "useSearchParams() requires Suspense boundary in login page",
+      "resolution": "Separated LoginForm into client component wrapped with Suspense"
+    }
+  ],
+  "deploymentChecklist": [
+    "npm install",
+    "npm run build",
+    "Set environment variables in Vercel",
+    "Configure MySQL database in cPanel",
+    "Generate admin password hash",
+    "Deploy to Vercel",
+    "Test authentication",
+    "Test widget preview",
+    "Verify API endpoints"
+  ]
+}
