@@ -11,6 +11,39 @@
 
 ---
 
+## Authentication Setup
+
+Your app requires authentication to access admin, agent, and customer portal areas.
+
+### Step 1: Generate Admin Password Hash
+
+Run the password hash generator:
+
+```bash
+npx ts-node scripts/generate-password-hash.ts
+```
+
+Follow the prompts and copy the hash value.
+
+### Step 2: Set Environment Variables
+
+Add these to your `.env.local` (local development) or Vercel dashboard (production):
+
+```
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD_HASH=<paste the hash from Step 1>
+NEXTAUTH_SECRET=<generate with: openssl rand -base64 32>
+```
+
+### Step 3: Login
+
+- Go to `/login`
+- Email: `admin@example.com`
+- Password: The password you entered in Step 1
+- You'll be able to access `/admin`, `/agent`, and `/portal`
+
+---
+
 ## Database (phpMyAdmin / MySQL)
 
 ### Step 1: Create a MySQL Database
