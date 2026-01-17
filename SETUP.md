@@ -12,11 +12,67 @@
 ---
 
 ## Database (phpMyAdmin / MySQL)
-1. Log into your AccuWeb hosting control panel.
-2. Create a MySQL database and user (note host, username, and password).
-3. Open phpMyAdmin and import the schema from `db/schema.sql`.
-4. (Optional) Create a database user with minimum privileges:
-   - `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, `INDEX` on the Nimbus database.
+
+### Step 1: Create a MySQL Database
+
+1. Log into your **cPanel** hosting control panel
+2. Find and click **"MySQL Databases"** (or similar)
+3. Under "Create New Database":
+   - Database name: `nimbus` (or your preferred name)
+   - Click **"Create Database"**
+4. Note your **database name** - you'll need it later
+
+### Step 2: Create a Database User
+
+1. Still in MySQL Databases section, find "MySQL Users"
+2. Under "Add New User":
+   - Username: `nimbus_user` (or your preferred username)
+   - Password: Create a **strong password** and save it
+   - Click **"Create User"**
+3. Note your **username and password** - required for Vercel setup
+
+### Step 3: Assign Privileges
+
+1. Under "Add User to Database":
+   - User: Select the user you just created
+   - Database: Select `nimbus` (or your database name)
+   - Click **"Add"**
+2. Check the following permissions:
+   - ✅ SELECT
+   - ✅ INSERT
+   - ✅ UPDATE
+   - ✅ DELETE
+   - ✅ CREATE
+   - ✅ ALTER
+   - ✅ INDEX
+3. Click **"Make Changes"**
+
+### Step 4: Import Database Schema
+
+1. Log into **phpMyAdmin** (usually accessible from cPanel)
+2. In the left sidebar, click your database name (`nimbus`)
+3. Click the **"Import"** tab at the top
+4. Upload the file: `db/schema.sql` (from this repository)
+5. Click **"Import"**
+6. Wait for success message - your database is now set up!
+
+### Step 5: Find Your MYSQL_HOST
+
+1. In cPanel, go to **"MySQL Databases"** again
+2. Look for "MySQL Connection Information" section
+3. Find your **Server Address** (usually `localhost` for cPanel)
+4. This is your `MYSQL_HOST` value
+
+### Summary of Credentials You Need for Vercel
+
+Write these down - you'll need them in the next step:
+```
+MYSQL_HOST = localhost (or your server address)
+MYSQL_PORT = 3306 (default)
+MYSQL_USER = nimbus_user (what you created in Step 2)
+MYSQL_PASSWORD = your_strong_password (what you set in Step 2)
+MYSQL_DATABASE = nimbus (what you created in Step 1)
+```
 
 ## Deploy with Vercel (No SSH Required)
 
