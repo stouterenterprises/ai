@@ -1,29 +1,125 @@
 # Nimbus Support Portal Setup
 
-## Database (phpMyAdmin / MySQL) - Recommended
-1. Log into your AccuWeb hosting control panel.
-2. Create a MySQL database and user (note host, username, and password).
-3. Open phpMyAdmin and import the schema from `db/schema.sql`.
-4. (Optional) Create a database user with minimum privileges:
-   - `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, `INDEX` on the Nimbus database.
+## Quick Start (Recommended)
 
-## Vercel Deployment with phpMyAdmin
-1. Import the GitHub repo into Vercel.
-2. Vercel should auto-detect Next.js (the included `vercel.json` can stay default).
-3. Add environment variables in **Project → Settings → Environment Variables**:
-   - `MYSQL_HOST`
-   - `MYSQL_PORT`
-   - `MYSQL_USER`
-   - `MYSQL_PASSWORD`
-   - `MYSQL_DATABASE`
-   - `AI_PROVIDER_KEY`
-   - `WEBHOOK_SIGNING_SECRET`
-   - `TWILIO_ACCOUNT_SID`
-   - `TWILIO_AUTH_TOKEN`
-   - `TWILIO_PHONE_NUMBER`
-   - `SKIPCALLS_API_KEY` (optional)
-   - `SKIPCALLS_WEBHOOK_SECRET` (optional)
-4. Deploy. Vercel will build with `npm run build` automatically.
+**Best Option for Your Setup:** Use Vercel with your phpMyAdmin database. No SSH or terminal needed - everything is automated.
+
+1. Push code to GitHub
+2. Connect GitHub to Vercel (click a button)
+3. Set environment variables in Vercel dashboard
+4. Done - Vercel builds and deploys automatically
+
+---
+
+## Database (phpMyAdmin / MySQL)
+
+### Step 1: Create a MySQL Database
+
+1. Log into your **cPanel** hosting control panel
+2. Find and click **"MySQL Databases"** (or similar)
+3. Under "Create New Database":
+   - Database name: `nimbus` (or your preferred name)
+   - Click **"Create Database"**
+4. Note your **database name** - you'll need it later
+
+### Step 2: Create a Database User
+
+1. Still in MySQL Databases section, find "MySQL Users"
+2. Under "Add New User":
+   - Username: `nimbus_user` (or your preferred username)
+   - Password: Create a **strong password** and save it
+   - Click **"Create User"**
+3. Note your **username and password** - required for Vercel setup
+
+### Step 3: Assign Privileges
+
+1. Under "Add User to Database":
+   - User: Select the user you just created
+   - Database: Select `nimbus` (or your database name)
+   - Click **"Add"**
+2. Check the following permissions:
+   - ✅ SELECT
+   - ✅ INSERT
+   - ✅ UPDATE
+   - ✅ DELETE
+   - ✅ CREATE
+   - ✅ ALTER
+   - ✅ INDEX
+3. Click **"Make Changes"**
+
+### Step 4: Import Database Schema
+
+1. Log into **phpMyAdmin** (usually accessible from cPanel)
+2. In the left sidebar, click your database name (`nimbus`)
+3. Click the **"Import"** tab at the top
+4. Upload the file: `db/schema.sql` (from this repository)
+5. Click **"Import"**
+6. Wait for success message - your database is now set up!
+
+### Step 5: Find Your MYSQL_HOST
+
+1. In cPanel, go to **"MySQL Databases"** again
+2. Look for "MySQL Connection Information" section
+3. Find your **Server Address** (usually `localhost` for cPanel)
+4. This is your `MYSQL_HOST` value
+
+### Summary of Credentials You Need for Vercel
+
+Write these down - you'll need them in the next step:
+```
+MYSQL_HOST = localhost (or your server address)
+MYSQL_PORT = 3306 (default)
+MYSQL_USER = nimbus_user (what you created in Step 2)
+MYSQL_PASSWORD = your_strong_password (what you set in Step 2)
+MYSQL_DATABASE = nimbus (what you created in Step 1)
+```
+
+## Deploy with Vercel (No SSH Required)
+
+### Prerequisites
+- GitHub account with the repository pushed
+- Vercel account (free at vercel.com)
+- phpMyAdmin database credentials from your hosting
+
+### Steps
+
+1. **Connect GitHub to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New Project"
+   - Import your GitHub repository
+   - Vercel auto-detects Next.js config
+
+2. **Add Environment Variables**
+   - In Vercel Project → Settings → Environment Variables
+   - Add the following:
+     ```
+     MYSQL_HOST = (get from phpMyAdmin or hosting panel)
+     MYSQL_PORT = 3306
+     MYSQL_USER = your_database_user
+     MYSQL_PASSWORD = your_database_password
+     MYSQL_DATABASE = your_database_name
+     AI_PROVIDER_KEY = your_openai_api_key
+     WEBHOOK_SIGNING_SECRET = your_random_secret
+     TWILIO_ACCOUNT_SID = (optional)
+     TWILIO_AUTH_TOKEN = (optional)
+     TWILIO_PHONE_NUMBER = (optional)
+     ```
+
+3. **Deploy**
+   - Click "Deploy"
+   - Vercel automatically runs `npm install` and `npm run build`
+   - Your app is live in ~2-3 minutes
+
+4. **Update Code Later**
+   - Push changes to GitHub: `git push origin claude/fix-messenger-widget-preview-fENaT`
+   - Vercel automatically redeploys
+
+### Why Vercel for You
+- ✅ **No SSH/Terminal needed** - everything through web UI
+- ✅ **Automatic builds** - no manual `npm install` or `npm run build`
+- ✅ **Connects to your MySQL** - uses environment variables
+- ✅ **Free tier** - generous limits for small projects
+- ✅ **Automatic deploys** - pushes to GitHub trigger builds
 
 ## Local Development
 1. Clone the repo and install dependencies:
@@ -56,23 +152,17 @@
    npm run db:seed
    ```
 
-## AccuWeb Deployment (Node.js App)
-1. Create a Node.js application in AccuWeb (select the latest LTS Node version).
-2. Point the app root to your deployed repository (or upload the build files).
-3. Set the environment variables from `.env.local` in the AccuWeb Node.js app settings.
-4. Install dependencies:
-   ```bash
-   npm install
-   ```
-5. Build the app:
-   ```bash
-   npm run build
-   ```
-6. Start the app:
-   ```bash
-   npm run start
-   ```
-7. Ensure the hosting firewall allows outbound HTTPS for OpenAI, Twilio, Zapier, etc.
+## cPanel Node.js Hosting (Advanced - Requires SSH)
+
+If your hosting supports Node.js apps and you have SSH access, you can deploy directly to your server without Vercel. However, since you don't have SSH access, **use Vercel instead** (see above).
+
+**Note:** Direct hosting requires:
+- SSH terminal access
+- Manual `npm install` and `npm run build` commands
+- Process manager like PM2 to keep app running
+- Manual restarts on code updates
+
+Vercel is simpler and handles all of this automatically.
 
 ## Messenger Widget Setup
 
