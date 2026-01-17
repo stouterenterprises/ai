@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { query, execute } from "@/lib/db";
+import { query, update, deleteRows } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
@@ -13,8 +13,9 @@ export async function GET(
 
   try {
     const departments = await query(
-      "SELECT id, business_id, name, description, created_at FROM departments WHERE id = ? AND business_id = ?",
-      [params.departmentId, params.businessId]
+      "departments",
+      { id: params.departmentId, business_id: params.businessId },
+      "id, business_id, name, description, created_at"
     );
 
     if (!departments.length) {
@@ -52,14 +53,16 @@ export async function PUT(
       );
     }
 
-    await execute(
-      "UPDATE departments SET name = ?, description = ? WHERE id = ? AND business_id = ?",
-      [name, description || null, params.departmentId, params.businessId]
+    await update(
+      "departments",
+      { id: params.departmentId, business_id: params.businessId },
+      { name, description: description || null }
     );
 
     const departments = await query(
-      "SELECT id, business_id, name, description, created_at FROM departments WHERE id = ?",
-      [params.departmentId]
+      "departments",
+      { id: params.departmentId },
+      "id, business_id, name, description, created_at"
     );
 
     return NextResponse.json(departments[0]);
@@ -81,9 +84,9 @@ export async function DELETE(
   }
 
   try {
-    await execute(
-      "DELETE FROM departments WHERE id = ? AND business_id = ?",
-      [params.departmentId, params.businessId]
+    await deleteRows(
+      "departments",
+      { id: params.departmentId, business_id: params.businessId }
     );
 
     return NextResponse.json({ success: true });

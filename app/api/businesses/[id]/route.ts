@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { query, execute } from "@/lib/db";
+import { query, update, deleteRows } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
@@ -13,8 +13,9 @@ export async function GET(
 
   try {
     const businesses = await query(
-      "SELECT id, name, description, created_at FROM businesses WHERE id = ?",
-      [params.id]
+      "businesses",
+      { id: params.id },
+      "id, name, description, created_at"
     );
 
     if (!businesses.length) {
@@ -52,14 +53,12 @@ export async function PUT(
       );
     }
 
-    await execute(
-      "UPDATE businesses SET name = ?, description = ? WHERE id = ?",
-      [name, description || null, params.id]
-    );
+    await update("businesses", { id: params.id }, { name, description: description || null });
 
     const businesses = await query(
-      "SELECT id, name, description, created_at FROM businesses WHERE id = ?",
-      [params.id]
+      "businesses",
+      { id: params.id },
+      "id, name, description, created_at"
     );
 
     return NextResponse.json(businesses[0]);
@@ -81,7 +80,7 @@ export async function DELETE(
   }
 
   try {
-    await execute("DELETE FROM businesses WHERE id = ?", [params.id]);
+    await deleteRows("businesses", { id: params.id });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

@@ -1,8 +1,5 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "next/typescript"
-  ],
+  "extends": "next/core-web-vitals",
   "rules": {
     "react/no-unescaped-entities": "error",
     "react/no-children-prop": "error",

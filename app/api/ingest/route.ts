@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { execute } from "@/lib/db";
+import { insertOne } from "@/lib/db";
 
 export async function POST(request: Request) {
   const { businessId, url } = await request.json();
@@ -9,11 +9,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const sql = `insert into jobs (business_id, type, payload, status)
-                 values (?, 'website_ingest', ?, 'queued')`;
-    const result = await execute(sql, [businessId, JSON.stringify({ url })]);
-    const insertId = (result as { insertId: number }).insertId;
-    return NextResponse.json({ job: { id: insertId } });
+    const job = await insertOne("jobs", {
+      business_id: businessId,
+      type: "website_ingest",
+      payload: JSON.stringify({ url }),
+      status: "queued"
+    });
+    return NextResponse.json({ job });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
