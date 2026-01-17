@@ -1,50 +1,16 @@
 # Nimbus Support Portal Setup
 
-## Vercel + Supabase (no CLI)
-### Supabase Database
-1. Create a Supabase project.
-2. Open **SQL Editor** and run the schema in `db/schema.postgres.sql`.
-3. Grab the **Connection string** from **Settings → Database**.
-   - Prefer the pooled connection string for serverless.
-   - Ensure the connection string includes `?sslmode=require`.
-4. Save the connection string for the `DATABASE_URL` environment variable.
-
-### Vercel Deployment
-1. Import the GitHub repo into Vercel.
-2. Vercel should auto-detect Next.js (the included `vercel.json` can stay default).
-3. Add environment variables in **Project → Settings → Environment Variables**:
-   - `DATABASE_URL` (Supabase connection string)
-   - `AI_PROVIDER_KEY`
-   - `WEBHOOK_SIGNING_SECRET`
-   - `TWILIO_ACCOUNT_SID`
-   - `TWILIO_AUTH_TOKEN`
-   - `TWILIO_PHONE_NUMBER`
-   - `SKIPCALLS_API_KEY` (optional)
-   - `SKIPCALLS_WEBHOOK_SECRET` (optional)
-4. Deploy. Vercel will build with `npm run build` automatically.
-
-### Supabase Notes
-- `DATABASE_URL` takes precedence over MySQL credentials.
-- The seed script (`npm run db:seed`) supports both MySQL and Postgres as long as the database URL or MySQL credentials are set.
-
-## Database (phpMyAdmin / MySQL)
+## Database (phpMyAdmin / MySQL) - Recommended
 1. Log into your AccuWeb hosting control panel.
 2. Create a MySQL database and user (note host, username, and password).
 3. Open phpMyAdmin and import the schema from `db/schema.sql`.
 4. (Optional) Create a database user with minimum privileges:
    - `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, `INDEX` on the Nimbus database.
 
-## Local Development
-1. Clone the repo and install dependencies:
-   ```bash
-   npm install
-   ```
-2. Copy environment variables:
-   ```bash
-   cp .env.example .env.local
-   ```
-3. Populate `.env.local`:
-   - `DATABASE_URL` (Supabase Postgres connection string, optional)
+## Vercel Deployment with phpMyAdmin
+1. Import the GitHub repo into Vercel.
+2. Vercel should auto-detect Next.js (the included `vercel.json` can stay default).
+3. Add environment variables in **Project → Settings → Environment Variables**:
    - `MYSQL_HOST`
    - `MYSQL_PORT`
    - `MYSQL_USER`
@@ -55,6 +21,30 @@
    - `TWILIO_ACCOUNT_SID`
    - `TWILIO_AUTH_TOKEN`
    - `TWILIO_PHONE_NUMBER`
+   - `SKIPCALLS_API_KEY` (optional)
+   - `SKIPCALLS_WEBHOOK_SECRET` (optional)
+4. Deploy. Vercel will build with `npm run build` automatically.
+
+## Local Development
+1. Clone the repo and install dependencies:
+   ```bash
+   npm install
+   ```
+2. Copy environment variables:
+   ```bash
+   cp .env.example .env.local
+   ```
+3. Populate `.env.local` with your phpMyAdmin credentials:
+   - `MYSQL_HOST` - Your MySQL server hostname
+   - `MYSQL_PORT` - Your MySQL port (default: 3306)
+   - `MYSQL_USER` - Your MySQL username
+   - `MYSQL_PASSWORD` - Your MySQL password
+   - `MYSQL_DATABASE` - Your database name
+   - `AI_PROVIDER_KEY` - Your OpenAI API key
+   - `WEBHOOK_SIGNING_SECRET` - A random secret for webhook verification
+   - `TWILIO_ACCOUNT_SID` (optional)
+   - `TWILIO_AUTH_TOKEN` (optional)
+   - `TWILIO_PHONE_NUMBER` (optional)
    - `SKIPCALLS_API_KEY` (optional)
    - `SKIPCALLS_WEBHOOK_SECRET` (optional)
 4. Run the dev server:
@@ -83,6 +73,49 @@
    npm run start
    ```
 7. Ensure the hosting firewall allows outbound HTTPS for OpenAI, Twilio, Zapier, etc.
+
+## Messenger Widget Setup
+
+The Nimbus messenger widget is an Intercom-style chat bubble that you can embed on any website to provide AI-powered support to your customers.
+
+### How It Works
+- **Simple Embed**: Add a single line of code to your website
+- **Persistent Chat Bubble**: Appears in the bottom-right corner like Intercom
+- **AI-Powered Responses**: Uses your knowledge base and RAG engine
+- **Department Routing**: Supports automatic and manual department selection
+- **No Dependencies**: Pure JavaScript, no external libraries required
+
+### Embedding the Widget
+1. Navigate to `/widget` in your Nimbus portal
+2. Copy the provided snippet code (button in the top section)
+3. Paste it into the `<head>` or before the closing `</body>` tag of any website
+
+### Sample Snippet
+```html
+<script src="https://your-domain.com/widget.js" data-business="YOUR_BUSINESS_ID"></script>
+```
+
+### Configuration
+- **`src`**: Your Nimbus domain URL followed by `/widget.js`
+- **`data-business`**: Your business ID (found in the admin dashboard)
+
+### Widget Features
+- **Chat Bubble**: Floating button that expands into a chat window
+- **Real-time Messages**: Instant responses from AI with loading indicators
+- **Message History**: Maintains conversation in the current session
+- **Responsive Design**: Works perfectly on mobile and desktop
+- **Auto-routing**: Routes messages to the correct department based on your rules
+
+### Testing the Widget
+1. Go to `/widget` in your portal
+2. Click "Start a conversation" to test the preview
+3. Select a specific department or use "Auto-route (recommended)"
+4. Send a test message to verify it's working
+
+### Troubleshooting
+- **Widget doesn't appear**: Ensure the URL in the snippet matches your domain
+- **No responses**: Check that your business ID is correct in the `data-business` attribute
+- **Chat bubble positioning**: The widget appears 20px from bottom-right corner (customizable via CSS)
 
 ## Webhooks
 ### Zapier (Webhooks by Zapier)

@@ -1,7 +1,5 @@
 import mysql from "mysql2/promise";
 
-export type DbAdapter = "mysql" | "postgres";
-
 export type DbConfig = {
   host: string;
   user: string;
@@ -9,8 +7,6 @@ export type DbConfig = {
   database: string;
   port?: number;
 };
-
-export const getDbAdapter = (): DbAdapter => (process.env.DATABASE_URL ? "postgres" : "mysql");
 
 const getMysqlConfig = (): DbConfig => {
   const host = process.env.MYSQL_HOST;
@@ -20,39 +16,15 @@ const getMysqlConfig = (): DbConfig => {
   const port = process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : undefined;
 
   if (!host || !user || !password || !database) {
-    throw new Error("Missing MySQL environment variables");
+    throw new Error(
+      "Missing MySQL environment variables. Please configure MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, and MYSQL_DATABASE."
+    );
   }
 
   return { host, user, password, database, port };
 };
 
-const getPostgresConfig = () => {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("Missing DATABASE_URL environment variable");
-  }
-  const sslRequired = connectionString.includes("sslmode=require");
-  return {
-    connectionString,
-    ssl: sslRequired ? { rejectUnauthorized: false } : undefined
-  };
-};
-
-const formatPostgresSql = (sql: string) => {
-  let index = 0;
-  return sql.replace(/\?/g, () => `$${++index}`).replace(/`/g, '"');
-};
-
 let mysqlPool: mysql.Pool | null = null;
-type PostgresQueryResult<T> = {
-  rows: T[];
-};
-
-type PostgresPool = {
-  query: <T>(sql: string, params?: unknown[]) => Promise<PostgresQueryResult<T>>;
-};
-
-let postgresPool: PostgresPool | null = null;
 
 const getMysqlPool = () => {
   if (!mysqlPool) {
@@ -67,31 +39,12 @@ const getMysqlPool = () => {
   return mysqlPool;
 };
 
-const getPostgresPool = () => {
-  if (!postgresPool) {
-    const { Pool } = require("pg") as {
-      Pool: new (config: ReturnType<typeof getPostgresConfig>) => PostgresPool;
-    };
-    postgresPool = new Pool(getPostgresConfig());
-  }
-  return postgresPool;
-};
-
 export const query = async <T>(sql: string, params: unknown[] = []): Promise<T[]> => {
-  if (getDbAdapter() === "postgres") {
-    const result = await getPostgresPool().query(formatPostgresSql(sql), params);
-    return result.rows as T[];
-  }
-
   const [rows] = await getMysqlPool().query(sql, params);
   return rows as T[];
 };
 
 export const execute = async (sql: string, params: unknown[] = []) => {
-  if (getDbAdapter() === "postgres") {
-    return getPostgresPool().query(formatPostgresSql(sql), params);
-  }
-
   const [result] = await getMysqlPool().execute(sql, params);
   return result;
 };
