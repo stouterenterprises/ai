@@ -1,29 +1,69 @@
 # Nimbus Support Portal Setup
 
-## Database (phpMyAdmin / MySQL) - Recommended
+## Quick Start (Recommended)
+
+**Best Option for Your Setup:** Use Vercel with your phpMyAdmin database. No SSH or terminal needed - everything is automated.
+
+1. Push code to GitHub
+2. Connect GitHub to Vercel (click a button)
+3. Set environment variables in Vercel dashboard
+4. Done - Vercel builds and deploys automatically
+
+---
+
+## Database (phpMyAdmin / MySQL)
 1. Log into your AccuWeb hosting control panel.
 2. Create a MySQL database and user (note host, username, and password).
 3. Open phpMyAdmin and import the schema from `db/schema.sql`.
 4. (Optional) Create a database user with minimum privileges:
    - `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `ALTER`, `INDEX` on the Nimbus database.
 
-## Vercel Deployment with phpMyAdmin
-1. Import the GitHub repo into Vercel.
-2. Vercel should auto-detect Next.js (the included `vercel.json` can stay default).
-3. Add environment variables in **Project → Settings → Environment Variables**:
-   - `MYSQL_HOST`
-   - `MYSQL_PORT`
-   - `MYSQL_USER`
-   - `MYSQL_PASSWORD`
-   - `MYSQL_DATABASE`
-   - `AI_PROVIDER_KEY`
-   - `WEBHOOK_SIGNING_SECRET`
-   - `TWILIO_ACCOUNT_SID`
-   - `TWILIO_AUTH_TOKEN`
-   - `TWILIO_PHONE_NUMBER`
-   - `SKIPCALLS_API_KEY` (optional)
-   - `SKIPCALLS_WEBHOOK_SECRET` (optional)
-4. Deploy. Vercel will build with `npm run build` automatically.
+## Deploy with Vercel (No SSH Required)
+
+### Prerequisites
+- GitHub account with the repository pushed
+- Vercel account (free at vercel.com)
+- phpMyAdmin database credentials from your hosting
+
+### Steps
+
+1. **Connect GitHub to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New Project"
+   - Import your GitHub repository
+   - Vercel auto-detects Next.js config
+
+2. **Add Environment Variables**
+   - In Vercel Project → Settings → Environment Variables
+   - Add the following:
+     ```
+     MYSQL_HOST = (get from phpMyAdmin or hosting panel)
+     MYSQL_PORT = 3306
+     MYSQL_USER = your_database_user
+     MYSQL_PASSWORD = your_database_password
+     MYSQL_DATABASE = your_database_name
+     AI_PROVIDER_KEY = your_openai_api_key
+     WEBHOOK_SIGNING_SECRET = your_random_secret
+     TWILIO_ACCOUNT_SID = (optional)
+     TWILIO_AUTH_TOKEN = (optional)
+     TWILIO_PHONE_NUMBER = (optional)
+     ```
+
+3. **Deploy**
+   - Click "Deploy"
+   - Vercel automatically runs `npm install` and `npm run build`
+   - Your app is live in ~2-3 minutes
+
+4. **Update Code Later**
+   - Push changes to GitHub: `git push origin claude/fix-messenger-widget-preview-fENaT`
+   - Vercel automatically redeploys
+
+### Why Vercel for You
+- ✅ **No SSH/Terminal needed** - everything through web UI
+- ✅ **Automatic builds** - no manual `npm install` or `npm run build`
+- ✅ **Connects to your MySQL** - uses environment variables
+- ✅ **Free tier** - generous limits for small projects
+- ✅ **Automatic deploys** - pushes to GitHub trigger builds
 
 ## Local Development
 1. Clone the repo and install dependencies:
@@ -56,23 +96,17 @@
    npm run db:seed
    ```
 
-## AccuWeb Deployment (Node.js App)
-1. Create a Node.js application in AccuWeb (select the latest LTS Node version).
-2. Point the app root to your deployed repository (or upload the build files).
-3. Set the environment variables from `.env.local` in the AccuWeb Node.js app settings.
-4. Install dependencies:
-   ```bash
-   npm install
-   ```
-5. Build the app:
-   ```bash
-   npm run build
-   ```
-6. Start the app:
-   ```bash
-   npm run start
-   ```
-7. Ensure the hosting firewall allows outbound HTTPS for OpenAI, Twilio, Zapier, etc.
+## cPanel Node.js Hosting (Advanced - Requires SSH)
+
+If your hosting supports Node.js apps and you have SSH access, you can deploy directly to your server without Vercel. However, since you don't have SSH access, **use Vercel instead** (see above).
+
+**Note:** Direct hosting requires:
+- SSH terminal access
+- Manual `npm install` and `npm run build` commands
+- Process manager like PM2 to keep app running
+- Manual restarts on code updates
+
+Vercel is simpler and handles all of this automatically.
 
 ## Messenger Widget Setup
 
