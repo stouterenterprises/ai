@@ -9,13 +9,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log("Fetching businesses from database...");
+    console.log("MySQL Host:", process.env.MYSQL_HOST);
+    console.log("MySQL User:", process.env.MYSQL_USER);
+    console.log("MySQL Database:", process.env.MYSQL_DATABASE);
+
     const businesses = await query(
       "SELECT id, name, description, created_at FROM businesses ORDER BY created_at DESC"
     );
+    console.log("Successfully fetched businesses:", businesses.length);
     return NextResponse.json(businesses);
   } catch (error) {
+    console.error("Database error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: (error as Error).message },
+      {
+        error: "Failed to load businesses",
+        details: errorMessage,
+        sqlHost: process.env.MYSQL_HOST || "NOT SET",
+        sqlUser: process.env.MYSQL_USER || "NOT SET"
+      },
       { status: 500 }
     );
   }
