@@ -21,6 +21,11 @@ declare module "next-auth" {
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@example.com";
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET;
+
+if (!NEXTAUTH_SECRET) {
+  console.warn("⚠️  Warning: NEXTAUTH_SECRET is not set in environment variables!");
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -30,25 +35,46 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
-        }
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            console.error("Missing email or password");
+            throw new Error("Invalid credentials");
+          }
 
-        // Check if it's the admin account
-        if (
-          credentials.email === ADMIN_EMAIL &&
-          ADMIN_PASSWORD_HASH &&
-          (await compare(credentials.password as string, ADMIN_PASSWORD_HASH))
-        ) {
+          console.log("Attempting login with email:", credentials.email);
+
+          // Check if it's the admin account
+          if (credentials.email !== ADMIN_EMAIL) {
+            console.error("Email does not match admin email");
+            throw new Error("Invalid email or password");
+          }
+
+          if (!ADMIN_PASSWORD_HASH) {
+            console.error("ADMIN_PASSWORD_HASH not configured");
+            throw new Error("Server configuration error: password not set");
+          }
+
+          const passwordMatch = await compare(
+            credentials.password as string,
+            ADMIN_PASSWORD_HASH
+          );
+
+          if (!passwordMatch) {
+            console.error("Password does not match");
+            throw new Error("Invalid email or password");
+          }
+
+          console.log("Login successful for:", credentials.email);
           return {
             id: "admin",
             email: ADMIN_EMAIL,
             name: "Admin",
             role: "admin"
           };
+        } catch (error) {
+          console.error("Authorization error:", error);
+          throw error;
         }
-
-        throw new Error("Invalid email or password");
       }
     })
   ],
@@ -57,22 +83,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async jwt({ token, user }: any) {
-      if (user) {
-        token.role = (user as any).role || "admin";
-        token.id = (user as any).id;
+      try {
+        if (user) {
+          token.role = (user as any).role || "admin";
+          token.id = (user as any).id;
+        }
+        return token;
+      } catch (error) {
+        console.error("JWT callback error:", error);
+        throw error;
       }
-      return token;
     },
     async session({ session, token }: any) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+      try {
+        if (session.user) {
+          session.user.id = token.id as string;
+          session.user.role = token.role as string;
+        }
+        return session;
+      } catch (error) {
+        console.error("Session callback error:", error);
+        throw error;
       }
-      return session;
     }
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60 // 30 days
-  }
+  },
+  secret: NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development"
 });
