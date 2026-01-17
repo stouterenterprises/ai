@@ -56,23 +56,44 @@
 5. Click **"Import"**
 6. Wait for success message - your database is now set up!
 
-### Step 5: Find Your MYSQL_HOST
+### Step 5: Enable Remote MySQL Access
+
+**Important:** Vercel needs to connect to your database from remote servers. You must enable remote access in cPanel.
+
+1. In cPanel, find and click **"Remote MySQL"** (or "Remote Database Access")
+2. Under "Add a Host":
+   - Add `%` (single percent sign - allows all IPs)
+   - Click **"Add Host"**
+3. Confirm the host appears in the list
+
+**Why this is safe:**
+- ✅ Only works with the correct username and password
+- ✅ Your database password is your real security layer
+- ✅ You'll store credentials securely in Vercel (not in code)
+- ✅ Vercel's strong password requirement prevents unauthorized access
+
+### Step 6: Find Your MYSQL_HOST
+
+For remote connections from Vercel, you may need your actual server hostname instead of `localhost`.
 
 1. In cPanel, go to **"MySQL Databases"** again
-2. Look for "MySQL Connection Information" section
-3. Find your **Server Address** (usually `localhost` for cPanel)
-4. This is your `MYSQL_HOST` value
+2. Look for **"MySQL Connection Information"** or **"Remote Connection Information"**
+3. Find your **Server Address** or **Hostname**
+   - This might look like: `123.45.67.89` or `mysql.yourdomain.com`
+4. Use this as your `MYSQL_HOST` value for Vercel (not `localhost`)
 
-### Summary of Credentials You Need for Vercel
+### Step 7: Summary of Credentials You Need for Vercel
 
 Write these down - you'll need them in the next step:
 ```
-MYSQL_HOST = localhost (or your server address)
+MYSQL_HOST = your_server_address (from Step 6 - Remote Connection Info)
 MYSQL_PORT = 3306 (default)
 MYSQL_USER = nimbus_user (what you created in Step 2)
 MYSQL_PASSWORD = your_strong_password (what you set in Step 2)
 MYSQL_DATABASE = nimbus (what you created in Step 1)
 ```
+
+**Important:** Use the remote server address from Step 6, NOT `localhost`. Vercel is remote and cannot access `localhost`.
 
 ## Deploy with Vercel (No SSH Required)
 
@@ -93,11 +114,11 @@ MYSQL_DATABASE = nimbus (what you created in Step 1)
    - In Vercel Project → Settings → Environment Variables
    - Add the following:
      ```
-     MYSQL_HOST = (get from phpMyAdmin or hosting panel)
+     MYSQL_HOST = your_remote_server_address (from cPanel Remote MySQL Connection Info, NOT localhost)
      MYSQL_PORT = 3306
-     MYSQL_USER = your_database_user
-     MYSQL_PASSWORD = your_database_password
-     MYSQL_DATABASE = your_database_name
+     MYSQL_USER = your_database_user (from Step 2)
+     MYSQL_PASSWORD = your_database_password (from Step 2)
+     MYSQL_DATABASE = your_database_name (from Step 1)
      AI_PROVIDER_KEY = your_openai_api_key
      WEBHOOK_SIGNING_SECRET = your_random_secret
      TWILIO_ACCOUNT_SID = (optional)
