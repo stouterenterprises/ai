@@ -237,6 +237,29 @@
         cursor: not-allowed;
       }
 
+      #${WINDOW_ID}-escalate {
+        background: #ff9800;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-family: inherit;
+        margin-top: 8px;
+        width: 100%;
+        transition: opacity 0.2s ease;
+      }
+
+      #${WINDOW_ID}-escalate:hover:not(:disabled) {
+        opacity: 0.9;
+      }
+
+      #${WINDOW_ID}-escalate:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
       .nimbus-loading {
         display: flex;
         gap: 4px;
@@ -310,6 +333,7 @@
     inputArea.innerHTML = `
       <textarea id="${WINDOW_ID}-input" placeholder="Ask a question..." rows="1"></textarea>
       <button id="${WINDOW_ID}-send" aria-label="Send message">→</button>
+      <button id="${WINDOW_ID}-escalate" aria-label="Escalate to human">Request Human Support</button>
     `;
 
     window_.appendChild(header);
@@ -329,6 +353,7 @@
   function attachEventListeners(bubble, window_, messagesContainer) {
     const input = document.getElementById(`${WINDOW_ID}-input`);
     const sendBtn = document.getElementById(`${WINDOW_ID}-send`);
+    const escalateBtn = document.getElementById(`${WINDOW_ID}-escalate`);
     const closeBtn = document.getElementById(`${WINDOW_ID}-close`);
 
     let messages = [];
@@ -346,6 +371,46 @@
       e.stopPropagation();
       window_.classList.remove('open');
       bubble.classList.remove('open');
+    });
+
+    // Escalate to human support
+    escalateBtn.addEventListener('click', async () => {
+      const subject = prompt("Please briefly describe your issue:");
+      if (!subject) return;
+
+      escalateBtn.disabled = true;
+      try {
+        const response = await fetch(`${config.origin}/api/escalate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: config.businessId,
+            departmentId: 'dept_support', // Default to support, can be enhanced
+            subject: subject,
+            conversationId: null // Could track conversation ID
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create support ticket');
+        }
+
+        const data = await response.json();
+        addMessageToDOM(
+          messagesContainer,
+          'assistant',
+          `✅ Support ticket created! Ticket ID: ${data.ticket.id.substring(0, 12)}\n\nAn agent will be with you shortly to help.`
+        );
+      } catch (error) {
+        console.error('Escalation error:', error);
+        addMessageToDOM(
+          messagesContainer,
+          'assistant',
+          'Sorry, I couldn\'t create a support ticket. Please try again.'
+        );
+      } finally {
+        escalateBtn.disabled = false;
+      }
     });
 
     // Auto-resize textarea
