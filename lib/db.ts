@@ -30,7 +30,7 @@ export const query = async <T>(
   filter?: Record<string, any>,
   select?: string
 ): Promise<T[]> => {
-  let query = getSupabase().from(table).select(select || "*");
+  let query = getSupabase().from(table as any).select(select || "*");
 
   if (filter) {
     Object.entries(filter).forEach(([key, value]) => {
@@ -101,7 +101,7 @@ export const update = async <T>(
   filter: Record<string, any>,
   data: Record<string, any>
 ): Promise<T[]> => {
-  let updateQuery: any = (getSupabase().from(table).update(data as any) as any);
+  let updateQuery: any = getSupabase().from(table as any).update(data);
 
   Object.entries(filter).forEach(([key, value]) => {
     updateQuery = updateQuery.eq(key, value);
@@ -126,7 +126,7 @@ export const deleteRows = async (
   table: string,
   filter: Record<string, any>
 ): Promise<void> => {
-  let deleteQuery: any = (getSupabase().from(table) as any);
+  let deleteQuery: any = getSupabase().from(table as any);
 
   Object.entries(filter).forEach(([key, value]) => {
     deleteQuery = deleteQuery.eq(key, value);
