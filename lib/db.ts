@@ -1,15 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let supabase: ReturnType<typeof createClient> | null = null;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error(
-    "Missing Supabase environment variables. Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
-  );
-}
+const getSupabase = () => {
+  if (supabase) return supabase;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Missing Supabase environment variables. Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+    );
+  }
+
+  supabase = createClient(supabaseUrl, supabaseKey);
+  return supabase;
+};
 
 /**
  * Execute a SELECT query
@@ -23,7 +30,7 @@ export const query = async <T>(
   filter?: Record<string, any>,
   select?: string
 ): Promise<T[]> => {
-  let query = supabase.from(table).select(select || "*");
+  let query = getSupabase().from(table).select(select || "*");
 
   if (filter) {
     Object.entries(filter).forEach(([key, value]) => {
@@ -47,7 +54,7 @@ export const query = async <T>(
  * @returns Query result
  */
 export const rawQuery = async <T>(sql: string): Promise<T[]> => {
-  const { data, error } = await supabase.rpc("exec_sql", { sql });
+  const { data, error } = await getSupabase().rpc("exec_sql", { sql });
 
   if (error) {
     console.error("Raw query error:", error);
@@ -110,7 +117,7 @@ export const update = async <T>(
   filter: Record<string, any>,
   data: Record<string, any>
 ): Promise<T[]> => {
-  let updateQuery: any = supabase.from(table).update(data);
+  let updateQuery: any = getSupabase().from(table).update(data);
 
   Object.entries(filter).forEach(([key, value]) => {
     updateQuery = updateQuery.eq(key, value);
@@ -135,7 +142,7 @@ export const deleteRows = async (
   table: string,
   filter: Record<string, any>
 ): Promise<void> => {
-  let deleteQuery: any = supabase.from(table);
+  let deleteQuery: any = getSupabase().from(table);
 
   Object.entries(filter).forEach(([key, value]) => {
     deleteQuery = deleteQuery.eq(key, value);
