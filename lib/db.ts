@@ -30,7 +30,7 @@ export const query = async <T>(
   filter?: Record<string, any>,
   select?: string
 ): Promise<T[]> => {
-  let query = (getSupabase().from(table).select(select || "*") as any);
+  let query = (getSupabase() as any).from(table).select(select || "*");
 
   if (filter) {
     Object.entries(filter).forEach(([key, value]) => {
@@ -55,9 +55,9 @@ export const query = async <T>(
  * @returns Inserted row
  */
 export const insertOne = async <T>(table: string, data: Record<string, any>): Promise<T> => {
-  const { data: result, error } = await (getSupabase()
+  const { data: result, error } = await (getSupabase() as any)
     .from(table)
-    .insert([data] as any) as any)
+    .insert([data])
     .select()
     .single();
 
@@ -76,9 +76,9 @@ export const insertOne = async <T>(table: string, data: Record<string, any>): Pr
  * @returns Inserted rows
  */
 export const insertMany = async <T>(table: string, data: Record<string, any>[]): Promise<T[]> => {
-  const { data: result, error } = await (getSupabase()
+  const { data: result, error } = await (getSupabase() as any)
     .from(table)
-    .insert(data as any) as any)
+    .insert(data)
     .select();
 
   if (error) {
@@ -101,9 +101,9 @@ export const update = async <T>(
   filter: Record<string, any>,
   data: Record<string, any>
 ): Promise<T[]> => {
-  let updateQuery: any = (getSupabase()
+  let updateQuery: any = (getSupabase() as any)
     .from(table)
-    .update(data as any) as any);
+    .update(data);
 
   Object.entries(filter).forEach(([key, value]) => {
     updateQuery = updateQuery.eq(key, value);
@@ -128,7 +128,7 @@ export const deleteRows = async (
   table: string,
   filter: Record<string, any>
 ): Promise<void> => {
-  let deleteQuery: any = (getSupabase().from(table) as any);
+  let deleteQuery: any = (getSupabase() as any).from(table);
 
   Object.entries(filter).forEach(([key, value]) => {
     deleteQuery = deleteQuery.eq(key, value);
