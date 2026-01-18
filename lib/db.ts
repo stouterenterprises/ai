@@ -21,8 +21,8 @@ const getSupabase = () => {
     throw new Error(errorMsg);
   }
 
-  supabase = createClient(supabaseUrl, supabaseKey);
-  console.log("[getSupabase] Initialized with URL:", supabaseUrl?.split("://")[1]?.split(".")[0]);
+  supabase = createClient(supabaseUrl!, supabaseKey!);
+  console.log("[getSupabase] Initialized with URL:", supabaseUrl.split("://")[1].split(".")[0]);
   return supabase;
 };
 
