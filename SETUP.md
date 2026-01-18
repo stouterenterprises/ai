@@ -50,40 +50,41 @@ Once your project is ready:
 ```sql
 -- Create businesses table
 create table if not exists businesses (
-  id char(36) primary key,
+  id varchar(36) primary key,
   name varchar(255) not null,
   slug varchar(255) unique not null,
-  allow_department_picker tinyint(1) default 1,
-  default_department_id char(36) null,
+  description text,
+  allow_department_picker smallint default 1,
+  default_department_id varchar(36) null,
   created_at timestamp default current_timestamp
 );
 
 -- Create departments table
 create table if not exists departments (
-  id char(36) primary key,
-  business_id char(36) not null,
+  id varchar(36) primary key,
+  business_id varchar(36) not null,
   name varchar(255) not null,
   description text,
-  enabled_channels json,
-  routing_keywords json,
+  enabled_channels jsonb,
+  routing_keywords jsonb,
   default_queue varchar(255),
-  hours json,
-  branding json,
+  hours jsonb,
+  branding jsonb,
   created_at timestamp default current_timestamp,
   foreign key (business_id) references businesses(id) on delete cascade
 );
 
 -- Create tickets table
 create table if not exists tickets (
-  id char(36) primary key,
-  business_id char(36) not null,
-  department_id char(36),
-  conversation_id char(36),
+  id varchar(36) primary key,
+  business_id varchar(36) not null,
+  department_id varchar(36),
+  conversation_id varchar(36),
   subject varchar(255) not null,
   status varchar(50) default 'open',
   priority varchar(50) default 'medium',
-  assignee_id char(36),
-  tags json,
+  assignee_id varchar(36),
+  tags jsonb,
   created_at timestamp default current_timestamp,
   foreign key (business_id) references businesses(id) on delete cascade,
   foreign key (department_id) references departments(id) on delete set null,
@@ -92,10 +93,10 @@ create table if not exists tickets (
 
 -- Create conversations table
 create table if not exists conversations (
-  id char(36) primary key,
-  business_id char(36) not null,
-  department_id char(36),
-  customer_id char(36),
+  id varchar(36) primary key,
+  business_id varchar(36) not null,
+  department_id varchar(36),
+  customer_id varchar(36),
   subject varchar(255),
   status varchar(50) default 'open',
   channel varchar(50) default 'chat',
@@ -106,10 +107,10 @@ create table if not exists conversations (
 
 -- Create jobs table
 create table if not exists jobs (
-  id bigint unsigned primary key auto_increment,
-  business_id char(36) not null,
+  id bigserial primary key,
+  business_id varchar(36) not null,
   type varchar(255) not null,
-  payload json not null,
+  payload jsonb not null,
   status varchar(50) default 'queued',
   created_at timestamp default current_timestamp,
   foreign key (business_id) references businesses(id) on delete cascade
