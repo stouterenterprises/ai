@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { query, execute } from "@/lib/db";
+import { query, insertOne } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -12,29 +12,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const businessId = searchParams.get("businessId");
     const departmentId = searchParams.get("departmentId");
-    const status = searchParams.get("status");
+    const ticketStatus = searchParams.get("status");
 
-    let sql = "SELECT id, business_id, department_id, subject, status, created_at FROM tickets WHERE 1=1";
-    const params: any[] = [];
+    const filter: any = {};
+    if (businessId) filter.business_id = businessId;
+    if (departmentId) filter.department_id = departmentId;
+    if (ticketStatus) filter.status = ticketStatus;
 
-    if (businessId) {
-      sql += " AND business_id = ?";
-      params.push(businessId);
-    }
-
-    if (departmentId) {
-      sql += " AND department_id = ?";
-      params.push(departmentId);
-    }
-
-    if (status) {
-      sql += " AND status = ?";
-      params.push(status);
-    }
-
-    sql += " ORDER BY created_at DESC";
-
-    const tickets = await query(sql, params);
+    const tickets = await query(
+      "tickets",
+      filter,
+      "id, business_id, department_id, subject, status, created_at"
+    );
     return NextResponse.json(tickets);
   } catch (error) {
     return NextResponse.json(
@@ -60,16 +49,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await execute(
-      "INSERT INTO tickets (business_id, department_id, subject, conversation_id, status) VALUES (?, ?, ?, ?, ?)",
-      [businessId, departmentId, subject, conversationId || null, "open"]
-    );
+    const newTicket = await insertOne("tickets", {
+      business_id: businessId,
+      department_id: departmentId,
+      subject,
+      conversation_id: conversationId || null,
+      status: "open"
+    });
 
-    const tickets = await query(
-      "SELECT id, business_id, department_id, subject, status, created_at FROM tickets ORDER BY created_at DESC LIMIT 1"
-    );
-
-    return NextResponse.json(tickets[0], { status: 201 });
+    return NextResponse.json(newTicket, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message },

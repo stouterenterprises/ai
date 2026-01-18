@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { query, execute } from "@/lib/db";
+import { query, update, deleteRows } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
@@ -13,8 +13,9 @@ export async function GET(
 
   try {
     const tickets = await query(
-      "SELECT id, business_id, department_id, subject, status, conversation_id, created_at FROM tickets WHERE id = ?",
-      [params.ticketId]
+      "tickets",
+      { id: params.ticketId },
+      "id, business_id, department_id, subject, status, conversation_id, created_at"
     );
 
     if (!tickets.length) {
@@ -45,34 +46,29 @@ export async function PUT(
   try {
     const { subject, status } = await request.json();
 
-    let updateFields = [];
-    let updateParams = [];
+    const updateData: any = {};
 
     if (subject !== undefined) {
-      updateFields.push("subject = ?");
-      updateParams.push(subject);
+      updateData.subject = subject;
     }
 
     if (status !== undefined) {
-      updateFields.push("status = ?");
-      updateParams.push(status);
+      updateData.status = status;
     }
 
-    if (updateFields.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { error: "No fields to update" },
         { status: 400 }
       );
     }
 
-    updateParams.push(params.ticketId);
-    const sql = `UPDATE tickets SET ${updateFields.join(", ")} WHERE id = ?`;
-
-    await execute(sql, updateParams);
+    await update("tickets", { id: params.ticketId }, updateData);
 
     const tickets = await query(
-      "SELECT id, business_id, department_id, subject, status, conversation_id, created_at FROM tickets WHERE id = ?",
-      [params.ticketId]
+      "tickets",
+      { id: params.ticketId },
+      "id, business_id, department_id, subject, status, conversation_id, created_at"
     );
 
     return NextResponse.json(tickets[0]);
@@ -94,7 +90,7 @@ export async function DELETE(
   }
 
   try {
-    await execute("DELETE FROM tickets WHERE id = ?", [params.ticketId]);
+    await deleteRows("tickets", { id: params.ticketId });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

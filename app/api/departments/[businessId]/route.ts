@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { query, execute } from "@/lib/db";
+import { query, insertOne } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
@@ -13,8 +13,9 @@ export async function GET(
 
   try {
     const departments = await query(
-      "SELECT id, business_id, name, description, created_at FROM departments WHERE business_id = ? ORDER BY name ASC",
-      [params.businessId]
+      "departments",
+      { business_id: params.businessId },
+      "id, business_id, name, description, created_at"
     );
 
     return NextResponse.json(departments);
@@ -45,17 +46,13 @@ export async function POST(
       );
     }
 
-    await execute(
-      "INSERT INTO departments (business_id, name, description) VALUES (?, ?, ?)",
-      [params.businessId, name, description || null]
-    );
+    const newDepartment = await insertOne("departments", {
+      business_id: params.businessId,
+      name,
+      description: description || null
+    });
 
-    const departments = await query(
-      "SELECT id, business_id, name, description, created_at FROM departments WHERE business_id = ? ORDER BY created_at DESC LIMIT 1",
-      [params.businessId]
-    );
-
-    return NextResponse.json(departments[0], { status: 201 });
+    return NextResponse.json(newDepartment, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message },

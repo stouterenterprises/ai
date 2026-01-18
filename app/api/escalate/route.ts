@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { execute, query } from "@/lib/db";
+import { insertOne } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,18 +13,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a ticket from the conversation
-    await execute(
-      "INSERT INTO tickets (business_id, department_id, subject, conversation_id, status, customer_email) VALUES (?, ?, ?, ?, ?, ?)",
-      [businessId, departmentId, subject, conversationId || null, "open", customerEmail || null]
-    );
-
-    const tickets = await query(
-      "SELECT id, business_id, department_id, subject, status, created_at FROM tickets ORDER BY created_at DESC LIMIT 1"
-    );
+    const ticket = await insertOne("tickets", {
+      business_id: businessId,
+      department_id: departmentId,
+      subject,
+      conversation_id: conversationId || null,
+      status: "open",
+      customer_email: customerEmail || null
+    });
 
     return NextResponse.json({
       success: true,
-      ticket: tickets[0]
+      ticket
     }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
