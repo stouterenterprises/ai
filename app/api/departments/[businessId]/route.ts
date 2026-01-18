@@ -47,6 +47,7 @@ export async function POST(
     }
 
     const newDepartment = await insertOne("departments", {
+      id: crypto.randomUUID(),
       business_id: params.businessId,
       name,
       description: description || null

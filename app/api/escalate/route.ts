@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Create a ticket from the conversation
     const ticket = await insertOne("tickets", {
+      id: crypto.randomUUID(),
       business_id: businessId,
       department_id: departmentId,
       subject,

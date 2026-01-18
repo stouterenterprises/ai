@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newTicket = await insertOne("tickets", {
+      id: crypto.randomUUID(),
       business_id: businessId,
       department_id: departmentId,
       subject,

@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     const business = await insertOne("businesses", {
+      id: crypto.randomUUID(),
       name,
       description: description || null,
       slug: name.toLowerCase().replace(/\s+/g, "-")
