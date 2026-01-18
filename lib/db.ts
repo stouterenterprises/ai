@@ -55,9 +55,9 @@ export const query = async <T>(
  * @returns Inserted row
  */
 export const insertOne = async <T>(table: string, data: Record<string, any>): Promise<T> => {
-  const { data: result, error } = await getSupabase()
+  const { data: result, error } = await (getSupabase()
     .from(table)
-    .insert([data as any])
+    .insert([data] as any) as any)
     .select()
     .single();
 
@@ -76,9 +76,9 @@ export const insertOne = async <T>(table: string, data: Record<string, any>): Pr
  * @returns Inserted rows
  */
 export const insertMany = async <T>(table: string, data: Record<string, any>[]): Promise<T[]> => {
-  const { data: result, error } = await getSupabase()
+  const { data: result, error } = await (getSupabase()
     .from(table)
-    .insert(data as any)
+    .insert(data as any) as any)
     .select();
 
   if (error) {
