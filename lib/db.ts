@@ -49,29 +49,13 @@ export const query = async <T>(
 };
 
 /**
- * Execute a raw SQL query (for complex queries)
- * @param sql SQL query string
- * @returns Query result
- */
-export const rawQuery = async <T>(sql: string): Promise<T[]> => {
-  const { data, error } = await getSupabase().rpc("exec_sql", { sql });
-
-  if (error) {
-    console.error("Raw query error:", error);
-    throw new Error(`Database query failed: ${error.message}`);
-  }
-
-  return (data as T[]) || [];
-};
-
-/**
  * Insert a single row
  * @param table Table name
  * @param data Row data
  * @returns Inserted row
  */
 export const insertOne = async <T>(table: string, data: Record<string, any>): Promise<T> => {
-  const { data: result, error } = await supabase
+  const { data: result, error } = await getSupabase()
     .from(table)
     .insert([data])
     .select()
@@ -92,7 +76,7 @@ export const insertOne = async <T>(table: string, data: Record<string, any>): Pr
  * @returns Inserted rows
  */
 export const insertMany = async <T>(table: string, data: Record<string, any>[]): Promise<T[]> => {
-  const { data: result, error } = await supabase
+  const { data: result, error } = await getSupabase()
     .from(table)
     .insert(data)
     .select();
@@ -158,20 +142,12 @@ export const deleteRows = async (
 
 /**
  * Legacy execute function for backward compatibility
- * Maps SQL-like operations to Supabase operations
+ * Supabase does not support raw SQL queries in serverless
+ * Use specific functions instead: insertOne, insertMany, update, deleteRows
  */
 export const execute = async (sql: string, params: unknown[] = []) => {
-  // For INSERT/UPDATE/DELETE, we use rawQuery if needed
-  // For now, throw error asking to use specific functions
-  if (sql.toUpperCase().startsWith("INSERT")) {
-    throw new Error("Use insertOne() or insertMany() instead of execute()");
-  }
-  if (sql.toUpperCase().startsWith("UPDATE")) {
-    throw new Error("Use update() instead of execute()");
-  }
-  if (sql.toUpperCase().startsWith("DELETE")) {
-    throw new Error("Use deleteRows() instead of execute()");
-  }
-
-  return rawQuery(sql);
+  throw new Error(
+    "Raw SQL execute() is not supported with Supabase. " +
+    "Use: insertOne(), insertMany(), update(), deleteRows(), or query() instead."
+  );
 };
