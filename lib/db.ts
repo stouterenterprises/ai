@@ -8,13 +8,21 @@ const getSupabase = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      "Missing Supabase environment variables. Please configure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
-    );
+  const missingVars: string[] = [];
+  if (!supabaseUrl) missingVars.push("NEXT_PUBLIC_SUPABASE_URL");
+  if (!supabaseKey) missingVars.push("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (missingVars.length > 0) {
+    const errorMsg = `Missing Supabase environment variables: ${missingVars.join(", ")}.
+    Please add these to your Vercel project Settings → Environment Variables.
+    URL should be like: https://your-project.supabase.co
+    Service Key should be from Supabase Settings → API → Service Role Key`;
+    console.error("[getSupabase]", errorMsg);
+    throw new Error(errorMsg);
   }
 
   supabase = createClient(supabaseUrl, supabaseKey);
+  console.log("[getSupabase] Initialized with URL:", supabaseUrl?.split("://")[1]?.split(".")[0]);
   return supabase;
 };
 
@@ -41,8 +49,8 @@ export const query = async <T>(
   const { data, error } = await query;
 
   if (error) {
-    console.error(`Query error on ${table}:`, error);
-    throw new Error(`Database query failed: ${error.message}`);
+    console.error(`[db.query] Error on table "${table}":`, error);
+    throw new Error(`Query failed on table "${table}": ${error.message}`);
   }
 
   return (data as T[]) || [];
@@ -62,8 +70,8 @@ export const insertOne = async <T>(table: string, data: Record<string, any>): Pr
     .single();
 
   if (error) {
-    console.error(`Insert error on ${table}:`, error);
-    throw new Error(`Insert failed: ${error.message}`);
+    console.error(`[db.insertOne] Error on table "${table}":`, error);
+    throw new Error(`Insert failed on table "${table}": ${error.message}`);
   }
 
   return result as T;
@@ -82,8 +90,8 @@ export const insertMany = async <T>(table: string, data: Record<string, any>[]):
     .select();
 
   if (error) {
-    console.error(`Insert error on ${table}:`, error);
-    throw new Error(`Insert failed: ${error.message}`);
+    console.error(`[db.insertMany] Error on table "${table}":`, error);
+    throw new Error(`Insert failed on table "${table}": ${error.message}`);
   }
 
   return (result as T[]) || [];
@@ -112,8 +120,8 @@ export const update = async <T>(
   const { data: result, error } = await updateQuery.select();
 
   if (error) {
-    console.error(`Update error on ${table}:`, error);
-    throw new Error(`Update failed: ${error.message}`);
+    console.error(`[db.update] Error on table "${table}":`, error);
+    throw new Error(`Update failed on table "${table}": ${error.message}`);
   }
 
   return (result as T[]) || [];
@@ -137,8 +145,8 @@ export const deleteRows = async (
   const { error } = await deleteQuery.delete();
 
   if (error) {
-    console.error(`Delete error on ${table}:`, error);
-    throw new Error(`Delete failed: ${error.message}`);
+    console.error(`[db.deleteRows] Error on table "${table}":`, error);
+    throw new Error(`Delete failed on table "${table}": ${error.message}`);
   }
 };
 
