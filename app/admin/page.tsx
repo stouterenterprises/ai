@@ -25,11 +25,20 @@ export default function AdminPage() {
   const loadBusinesses = async () => {
     try {
       const res = await fetch("/api/businesses");
-      if (!res.ok) throw new Error("Failed to load businesses");
       const data = await res.json();
-      setBusinesses(data);
+
+      if (!res.ok) {
+        const errorMsg = data?.details || data?.error || "Failed to load businesses";
+        const fullError = `${res.status} ${res.statusText}: ${errorMsg}`;
+        console.error("[loadBusinesses]", fullError, data);
+        throw new Error(fullError);
+      }
+
+      setBusinesses(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError((err as Error).message);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error("[loadBusinesses] Error:", errorMsg);
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +49,7 @@ export default function AdminPage() {
     if (!newBusinessName.trim()) return;
 
     setIsCreating(true);
+    setError("");
     try {
       const res = await fetch("/api/businesses", {
         method: "POST",
@@ -50,13 +60,22 @@ export default function AdminPage() {
         })
       });
 
-      if (!res.ok) throw new Error("Failed to create business");
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errorMsg = data?.details || data?.error || "Failed to create business";
+        const fullError = `${res.status} ${res.statusText}: ${errorMsg}`;
+        console.error("[createBusiness]", fullError, data);
+        throw new Error(fullError);
+      }
 
       setNewBusinessName("");
       setNewBusinessDesc("");
       await loadBusinesses();
     } catch (err) {
-      setError((err as Error).message);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error("[createBusiness] Error:", errorMsg);
+      setError(errorMsg);
     } finally {
       setIsCreating(false);
     }
@@ -65,15 +84,26 @@ export default function AdminPage() {
   const handleDeleteBusiness = async (id: string) => {
     if (!confirm("Are you sure you want to delete this business?")) return;
 
+    setError("");
     try {
       const res = await fetch(`/api/businesses/${id}`, {
         method: "DELETE"
       });
 
-      if (!res.ok) throw new Error("Failed to delete business");
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errorMsg = data?.details || data?.error || "Failed to delete business";
+        const fullError = `${res.status} ${res.statusText}: ${errorMsg}`;
+        console.error("[deleteBusiness]", fullError, data);
+        throw new Error(fullError);
+      }
+
       await loadBusinesses();
     } catch (err) {
-      setError((err as Error).message);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error("[deleteBusiness] Error:", errorMsg);
+      setError(errorMsg);
     }
   };
 
@@ -87,7 +117,10 @@ export default function AdminPage() {
 
       {error && (
         <div className="card" style={{ backgroundColor: "#ffebee", borderColor: "#ef5350" }}>
-          <p style={{ color: "#d32f2f" }}>Error: {error}</p>
+          <p style={{ color: "#d32f2f", marginBottom: "10px", fontWeight: "bold" }}>Error: {error}</p>
+          <p style={{ color: "#999", fontSize: "12px", margin: "0" }}>
+            💡 Troubleshooting: Check the browser console (F12) for more details. Verify Supabase credentials are set in Vercel environment variables.
+          </p>
         </div>
       )}
 
